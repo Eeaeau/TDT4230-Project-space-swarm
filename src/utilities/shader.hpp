@@ -16,8 +16,17 @@ namespace Gloom
 {
     class Shader
     {
+    private:
+
+        // Private member variables
+        GLuint mProgram;
+        GLint  mStatus;
+        GLint  mLength;
+
     public:
-        Shader()            { mProgram = glCreateProgram(); }
+        Shader() {
+            mProgram = glCreateProgram();
+        }
 
         // Public member functions
         void   activate()   { glUseProgram(mProgram); }
@@ -95,6 +104,12 @@ namespace Gloom
             link();
         }
 
+        /* Convenience function to get a uniforms ID from a string
+           containing its name */
+        GLint getUniformFromName(std::string const &uniformName) {
+            return glGetUniformLocation(this->get(), uniformName.c_str());
+        }
+
 
         /* Used for debugging shader programs (expensive to run) */
         bool isValid()
@@ -136,10 +151,6 @@ namespace Gloom
         Shader(Shader const &) = delete;
         Shader & operator =(Shader const &) = delete;
 
-        // Private member variables
-        GLuint mProgram;
-        GLint  mStatus;
-        GLint  mLength;
     };
 }
 

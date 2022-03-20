@@ -30,3 +30,22 @@
 *.exe
 *.out
 *.app
+
+*.pdb
+*.log
+*.tlog
+
+# Build directory
+/build/*
+/CMakeFiles/*
+/glowbox.dir/*
+/x64/*
+/src/.vs/*
+
+
+!/build/.emptydirectory
+
+/.vscode/*
+/.vs/
+
+*.db

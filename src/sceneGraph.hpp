@@ -4,6 +4,8 @@
 #include <glm/mat4x4.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include <utilities/glutils.h>
+
 #include <stack>
 #include <vector>
 #include <cstdio>
@@ -14,13 +16,9 @@
 #include <fstream>
 
 enum SceneNodeType {
-	GEOMETRY, POINT_LIGHT, SPOT_LIGHT
+	GEOMETRY, TEXTURED_GEOMETRY, OVERLAY, SPRITE, POINT_LIGHT, SPOT_LIGHT
 };
 
-// In case you haven't got much experience with C or C++, let me explain this "typedef" you see below.
-// The point of a typedef is that you it, as its name implies, allows you to define arbitrary data types based upon existing ones. For instance, "typedef float typeWhichMightBeAFloat;" allows you to define a variable such as this one: "typeWhichMightBeAFloat variableName = 5.0;". The C/C++ compiler translates this type into a float. 
-// What is the point of using it here? A smrt person, while designing the C language, thought it would be a good idea for various reasons to force you to explicitly state that you are using a data structure datatype (struct). So, when defining a variable, you'd have to type "struct SceneNode node = ..." in the case of a SceneNode. Which can get in the way of readability.
-// If we just use typedef to define a new type called "SceneNode", which really is the type "struct SceneNode", we can omit the "struct" part when creating an instance of SceneNode. 
 struct SceneNode {
 	SceneNode() {
 		position = glm::vec3(0, 0, 0);
@@ -28,11 +26,29 @@ struct SceneNode {
 		scale = glm::vec3(1, 1, 1);
 
         referencePoint = glm::vec3(0, 0, 0);
+
         vertexArrayObjectID = -1;
+		diffuseTextureID = -1;
+		normalTextureID = -1;
+
         VAOIndexCount = 0;
 
         nodeType = GEOMETRY;
+
+		lightColor = glm::vec3(4);
+		constant = 1.0;
+		linear = 0.009;
+		quadratic = 0.0032;
+
+
+		//diffuseTexture = loadPNGFile("../res/textures/normal-map-debug.png");
+		//normalTexture = loadPNGFile("../res/textures/normal-map-debug.png");
 	}
+
+	glm::vec3 lightColor;
+	float constant;
+	float linear;
+	float quadratic;
 
 	// A list of all children that belong to this node.
 	// For instance, in case of the scene graph of a human body shown in the assignment text, the "Upper Torso" node would contain the "Left Arm", "Right Arm", "Head" and "Lower Torso" nodes in its list of children.
@@ -43,7 +59,18 @@ struct SceneNode {
 	glm::vec3 rotation;
 	glm::vec3 scale;
 
-	// A transformation matrix representing the transformation of the node's location relative to its parent. This matrix is updated every frame.
+	PNGImage diffuseTexture;
+	PNGImage normalTexture;
+	PNGImage roughnessTexture;
+
+	// The Model matrix for preserving angles is needed
+	glm::mat4 modelMatrix;
+	glm::mat4 modelViewMatrix;
+
+	// The View matrix
+	//glm::mat4 viewMatrix;
+
+	// A MVP transformation matrix representing the transformation of the node's location relative to its parent. This matrix is updated every frame.
 	glm::mat4 currentTransformationMatrix;
 
 	// The location of the node's reference point
@@ -52,16 +79,28 @@ struct SceneNode {
 	// The ID of the VAO containing the "appearance" of this SceneNode.
 	int vertexArrayObjectID;
 	unsigned int VAOIndexCount;
+	unsigned int diffuseTextureID;
+	unsigned int normalTextureID;
+	unsigned int roughnessTextureID;
+
+	// The ID used for of lights 
+	unsigned lightID;
 
 	// Node type is used to determine how to handle the contents of a node
 	SceneNodeType nodeType;
 };
 
-// Struct for keeping track of 2D coordinates
+
+//struct LightNode: SceneNode {
+//	LightNode() {
+//		nodeType = POINT_LIGHT;
+//	}
+//	
+//};
 
 SceneNode* createSceneNode();
 void addChild(SceneNode* parent, SceneNode* child);
 void printNode(SceneNode* node);
-
+int totalChildren(SceneNode* parent);
 
 // For more details, see SceneGraph.cpp.

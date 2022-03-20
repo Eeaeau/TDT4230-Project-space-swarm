@@ -1,13 +1,36 @@
 #
 # Specify minimum CMake version and project name
 #
-cmake_minimum_required (VERSION 3.0)
+cmake_minimum_required(VERSION 3.6)
 project (glowbox)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE INTERNAL "") # nice for language servers
+
+#
+# Set python cmd, preferring python 3
+#
+
+find_program(PYTHON_3_LOCATION py)
+if(NOT "${PYTHON_3_LOCATION}" STREQUAL "PYTHON_3_LOCATION-NOTFOUND") # windows shim
+	execute_process(COMMAND py -3 --version RESULT_VARIABLE has_python_3)
+	if("${has_python_3}" STREQUAL "0")
+		set (PYTHON_CMD py -3)
+	else()
+		set (PYTHON_CMD py) # may use python 2
+	endif()
+else()
+    find_program(PYTHON_3_LOCATION python3)
+    if(NOT "${PYTHON_3_LOCATION}" STREQUAL "PYTHON_3_LOCATION-NOTFOUND") # windows shim
+    	set (PYTHON_CMD python3)
+    else()
+    	set (PYTHON_CMD python)
+    endif()
+endif()
+message("spis meg ${PYTHON_CMD}")
 
 #
 # CMake setup
 #
-set (CMAKE_CXX_STANDARD 17)
+set (CMAKE_CXX_STANDARD 14)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set (CMAKE_VERBOSE_MAKEFILE 0) # 1 should be used for debugging
 set (CMAKE_SUPPRESS_REGENERATION TRUE) # Suppresses ZERO_CHECK
@@ -38,20 +61,40 @@ option (SFML_BUILD_NETWORK OFF)
 add_subdirectory(lib/SFML)
 
 #
+# Add FMT
+#
+add_subdirectory (lib/fmt)
+
+#
+# GLAD
+#
+if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/lib/glad/include)
+    message("Generating glad library files, using ${PYTHON_CMD}")
+	execute_process(
+		COMMAND ${PYTHON_CMD} -m glad --profile core --out-path . --generator c --spec gl
+		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/lib/glad
+	)
+	message("Finished generating glad library files")
+endif()
+
+#
 # Set include paths
 #
 include_directories (src/
                      lib/glad/include/
                      lib/glfw/include/
+                     lib/lodepng/
                      lib/glm/
                      lib/stb/
                      lib/arrrgh/
                      lib/SFML/include/)
 
+
 #
 # Add files
 #
-file (GLOB         VENDORS_SOURCES lib/glad/src/glad.c)
+file (GLOB         VENDORS_SOURCES lib/glad/src/glad.c
+								   lib/lodepng/lodepng.cpp)
 file (GLOB_RECURSE PROJECT_HEADERS src/*.hpp
                                    src/*.h)
 file (GLOB_RECURSE PROJECT_SOURCES src/*.cpp
@@ -86,5 +129,7 @@ add_executable (${PROJECT_NAME} ${PROJECT_SOURCES} ${PROJECT_HEADERS}
 target_link_libraries (${PROJECT_NAME}
                        glfw
                        sfml-audio
+                       fmt::fmt
                        ${GLFW_LIBRARIES}
                        ${GLAD_LIBRARIES})
+set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT glowbox)

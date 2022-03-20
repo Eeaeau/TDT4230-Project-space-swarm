@@ -40,11 +40,7 @@ GLFWwindow* initialise()
     glfwWindowHint(GLFW_SAMPLES, windowSamples);  // MSAA
 
     // Create window using GLFW
-    GLFWwindow* window = glfwCreateWindow(windowWidth,
-                                          windowHeight,
-                                          windowTitle.c_str(),
-                                          nullptr,
-                                          nullptr);
+    GLFWwindow* window = glfwCreateWindow(windowWidth, windowHeight, windowTitle.c_str(), nullptr, nullptr);
 
     // Ensure the window is set up correctly
     if (!window)
@@ -71,9 +67,9 @@ GLFWwindow* initialise()
 int main(int argc, const char* argb[])
 {
     arrrgh::parser parser("glowbox", "Small breakout like juggling game");
-    const auto& showHelp = parser.add<bool>("help", "Show this help message.", 'h', arrrgh::Optional, false);
-    const auto& enableMusic = parser.add<bool>("enable-music", "Play background music while the game is playing", 'm', arrrgh::Optional, false);
-    const auto& enableAutoplay = parser.add<bool>("autoplay", "Let the game play itself automatically. Useful for testing.", 'a', arrrgh::Optional, false);
+    const auto& showHelp       = parser.add<bool>("help", "Show this help message.", 'h', arrrgh::Optional, false);
+    const auto& enableMusic    = parser.add<bool>("enable-music", "Play background music while the game is playing", 'm', arrrgh::Optional, true);
+    const auto& enableAutoplay = parser.add<bool>("autoplay", "Let the game play itself automatically. Useful for testing.", 'a', arrrgh::Optional, true);
 
     // If you want to add more program arguments, define them here,
     // but do not request their value here (they have not been parsed yet at this point).
@@ -96,7 +92,7 @@ int main(int argc, const char* argb[])
     }
 
     CommandLineOptions options;
-    options.enableMusic = enableMusic.value();
+    options.enableMusic    = enableMusic.value();
     options.enableAutoplay = enableAutoplay.value();
 
     // Initialise window using GLFW
