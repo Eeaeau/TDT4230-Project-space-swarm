@@ -49,3 +49,5 @@
 /.vs/
 
 *.db
+
+lib/glad
