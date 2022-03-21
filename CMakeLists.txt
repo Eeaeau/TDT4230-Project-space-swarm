@@ -78,6 +78,13 @@ if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/lib/glad/include)
 endif()
 
 #
+# TinyGLTF
+#
+set (TINYGLTF_HEADER_ONLY ON CACHE INTERNAL "" FORCE)
+set (TINYGLTF_INSTALL OFF CACHE INTERNAL "" FORCE)
+add_subdirectory(lib/tinygltf)
+
+#
 # Set include paths
 #
 include_directories (src/
@@ -87,7 +94,8 @@ include_directories (src/
                      lib/glm/
                      lib/stb/
                      lib/arrrgh/
-                     lib/SFML/include/)
+                     lib/SFML/include/
+                     lib/tinygltf/)
 
 
 #
@@ -130,6 +138,7 @@ target_link_libraries (${PROJECT_NAME}
                        glfw
                        sfml-audio
                        fmt::fmt
+                       tinygltf
                        ${GLFW_LIBRARIES}
                        ${GLAD_LIBRARIES})
 set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT glowbox)
