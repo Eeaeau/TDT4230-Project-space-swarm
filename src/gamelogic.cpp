@@ -6,7 +6,14 @@
 #include <glm/vec3.hpp>
 #include <iostream>
 #include <utilities/timeutils.h>
+
+// Define these only in *one* .cc file.
+#define TINYGLTF_IMPLEMENTATION
+#define STB_IMAGE_IMPLEMENTATION
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+// #define TINYGLTF_NOEXCEPTION // optional. disable exception handling.
 #include <utilities/mesh.h>
+
 #include <utilities/shapes.h>
 #include <utilities/glutils.h>
 #include <SFML/Audio/Sound.hpp>
@@ -16,10 +23,13 @@
 #include "gamelogic.h"
 #include "sceneGraph.hpp"
 #define GLM_ENABLE_EXPERIMENTAL
+
 #include <glm/gtx/transform.hpp>
 
 #include "utilities/imageLoader.hpp"
 #include "utilities/glfont.h"
+
+#include <fstream>
 
 enum KeyFrameAction {
     BOTTOM, TOP
@@ -37,7 +47,9 @@ unsigned int currentKeyFrame = 0;
 unsigned int previousKeyFrame = 0;
 
 SceneNode* rootNode;
+SceneNode* gltfNode;
 SceneNode* boxNode;
+SceneNode* testCubeNode;
 SceneNode* ballNode;
 SceneNode* ball2Node;
 SceneNode* padNode;
@@ -124,6 +136,14 @@ void mouseCallback(GLFWwindow* window, double x, double y) {
 std::vector<SceneNode*> lightSources;
 int NumLightProcessed = 0;
 
+tinygltf::Model modelFromglTF;
+
+static std::string GetFilePathExtension(const std::string& FileName) {
+    if (FileName.find_last_of(".") != std::string::npos)
+        return FileName.substr(FileName.find_last_of(".") + 1);
+    return "";
+}
+
 void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     buffer = new sf::SoundBuffer();
     if (!buffer->loadFromFile("../res/Hall of the Mountain King.ogg")) {
@@ -151,6 +171,7 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     // Create meshes
     Mesh pad = cube(padDimensions, glm::vec2(30, 40), true);
     Mesh box = cube(boxDimensions, glm::vec2(90), true, true);
+    Mesh testCube = cube(boxDimensions, glm::vec2(90), false, true);
     Mesh sphere = generateSphere(1.0, 40, 40);
     Mesh sphere2 = generateSphere(1.0, 40, 40);
     Mesh textMesh = generateTextGeometryBuffer("Click to begin!", 39 / 29, 0.5);
@@ -160,14 +181,18 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     unsigned int ballVAO = generateBuffer(sphere);
     unsigned int ball2VAO = generateBuffer(sphere2);
     unsigned int boxVAO  = generateBuffer(box);
+    unsigned int testCubeVAO = generateBuffer(testCube);
     unsigned int padVAO  = generateBuffer(pad);
     unsigned int textVAO = generateBuffer(textMesh);
     unsigned int textEmptyVAO = generateBuffer(textEmptyMesh);
 
     // ------ Construct scene ------ //
-    //create scene nodes 
+    //create scene nodes
     rootNode = createSceneNode();
+    gltfNode = createSceneNode();
     boxNode  = createSceneNode();
+    testCubeNode = createSceneNode();
+    testCubeNode->position = boxCenter;
     padNode  = createSceneNode();
     ballNode = createSceneNode();
     ball2Node = createSceneNode();
@@ -217,7 +242,7 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     //animatedLightNode->lightColor = glm::vec3(8);
 
     // attatch to scene graph
-    rootNode->children.push_back(boxNode);
+    //rootNode->children.push_back(boxNode);
 
     rootNode->children.push_back(padNode);
 
@@ -297,7 +322,56 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     //textureAtlasNode->diffuseTextureID = textAtlasID;
     //textureAtlasNode->normalTextureID = brickNormalID;
 
-    getTimeDeltaSeconds();
+    
+
+    
+    std::string input_filename = "../res/mesh/teapot.gltf";
+
+    //bool ret = tinygltf::LoadExternalFile;
+
+    bool ret = false;
+
+    //loadModel(modelFromglTF, input_filename.c_str());
+    if (!loadModel(modelFromglTF, input_filename.c_str())) return;
+
+
+    gltfNode->vertexArrayObjectID = bindModel(modelFromglTF);
+    gltfNode->position = boxCenter;
+    gltfNode->nodeType = GLTF_GEOMETRY;
+    gltfNode->model = modelFromglTF;
+    
+    rootNode->children.push_back(gltfNode);
+
+
+    //if (ext.compare("glb") == 0) {
+    //    std::cout << "Reading binary glTF" << std::endl;
+    //    // assume binary glTF.
+    //    ret = gltf_ctx.LoadBinaryFromFile(&model, &err, &warn,
+    //        input_filename.c_str());
+    //}
+    //else {
+    //    std::cout << "Reading ASCII glTF" << std::endl;
+    //    // assume ascii glTF.
+    //    ret =
+    //        gltf_ctx.LoadASCIIFromFile(&model, &err, &warn, input_filename.c_str());
+    //}
+
+   /* ret = gltf_ctx.LoadASCIIFromFile(&model, &err, &warn, input_filename.c_str());
+    
+
+    if (!warn.empty()) {
+        printf("Warn: %s\n", warn.c_str());
+    }
+
+    if (!err.empty()) {
+        printf("Err: %s\n", err.c_str());
+    }
+
+    if (!ret) {
+        printf("Failed to parse glTF\n");
+    }
+
+    getTimeDeltaSeconds();*/
 
     std::cout << fmt::format("Initialized scene with {} SceneNodes.", totalChildren(rootNode)) << std::endl;
 
@@ -558,6 +632,11 @@ void renderNode(SceneNode* node) {
                 glBindVertexArray(node->vertexArrayObjectID);
                 glDrawElements(GL_TRIANGLES, node->VAOIndexCount, GL_UNSIGNED_INT, nullptr);
             }
+            break;
+        case GLTF_GEOMETRY:
+            shader->activate();
+            //drawModel(node->vertexArrayObjectID, node->model);
+            drawModel(node->vertexArrayObjectID, node->model);
             break;
         case TEXTURED_GEOMETRY:
             shader->activate();

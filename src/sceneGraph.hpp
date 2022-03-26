@@ -15,8 +15,11 @@
 #include <chrono>
 #include <fstream>
 
+//#include "mesh.h"
+//#include <tiny_gltf.h>
+
 enum SceneNodeType {
-	GEOMETRY, TEXTURED_GEOMETRY, OVERLAY, SPRITE, POINT_LIGHT, SPOT_LIGHT
+	GEOMETRY, INCTANCED_GEOMETRY, GLTF_GEOMETRY, TEXTURED_GEOMETRY, OVERLAY, SPRITE, POINT_LIGHT, SPOT_LIGHT
 };
 
 struct SceneNode {
@@ -88,6 +91,8 @@ struct SceneNode {
 
 	// Node type is used to determine how to handle the contents of a node
 	SceneNodeType nodeType;
+
+	tinygltf::Model model;
 };
 
 

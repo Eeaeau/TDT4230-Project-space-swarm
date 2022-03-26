@@ -1,7 +1,10 @@
 #pragma once
 
 #include <vector>
+#include <iostream>
 #include <glm/glm.hpp>
+
+#include "tiny_gltf.h"
 
 struct Mesh {
     std::vector<glm::vec3> vertices;
@@ -12,3 +15,6 @@ struct Mesh {
 
     std::vector<unsigned int> indices;
 };
+
+
+bool loadModel(tinygltf::Model& model, const char* filename);
