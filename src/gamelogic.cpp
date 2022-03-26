@@ -76,7 +76,9 @@ const glm::vec3 padDimensions(30, 3, 40);
 glm::vec3 ballPosition(0, ballRadius + padDimensions.y, boxDimensions.z / 2);
 glm::vec3 ballDirection(1, 1, 0.2f);
 glm::vec3 boxCenter(0, -10, -80);
-glm::vec3 cameraPosition;
+
+float cameraHeight = 10;
+glm::vec3 cameraPosition = glm::vec3(0, cameraHeight, -20);
 glm::mat4 orthoProject;
 
 CommandLineOptions options;
@@ -97,6 +99,7 @@ double totalElapsedTime = debug_startTime;
 double gameElapsedTime = debug_startTime;
 
 double mouseSensitivity = 1.0;
+
 double lastMouseX = windowWidth / 2;
 double lastMouseY = windowHeight / 2;
 void mouseCallback(GLFWwindow* window, double x, double y) {
@@ -117,6 +120,28 @@ void mouseCallback(GLFWwindow* window, double x, double y) {
 
     glfwSetCursorPos(window, windowWidth / 2, windowHeight / 2);
 }
+
+void keyCallback(GLFWwindow* window,
+    int key,
+    int scancode,
+    int action,
+    int mods) {
+
+
+
+}
+
+float scrollFactor = 5;
+float maxCameraHeight = 80;
+float minCameraHeight = -10;
+
+void scrollCallback(GLFWwindow* window, double x, double y) {
+    //scrollFactor = y;
+    cameraHeight -= y * scrollFactor;
+    cameraHeight = glm::min(glm::max(cameraHeight, minCameraHeight), maxCameraHeight);
+    std::cout << y<< std::endl;
+}
+
 
 //// A few lines to help you if you've never used c++ structs
 //struct LightSource {
@@ -160,6 +185,9 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
 
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
     glfwSetCursorPosCallback(window, mouseCallback);
+
+    glfwSetScrollCallback(window, scrollCallback);
+    //glfwSetKeyCallback(window, keyCallback);
 
     shader = new Gloom::Shader();
     shader->makeBasicShader("../res/shaders/simple.vert", "../res/shaders/simple.frag");
@@ -354,8 +382,8 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
 
 void updateFrame(GLFWwindow* window) {
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-
     double timeDelta = getTimeDeltaSeconds();
+    double fractionFrameComplete;
 
     const float ballBottomY = boxNode->position.y - (boxDimensions.y/2) + ballRadius + padDimensions.y;
     const float ballTopY    = boxNode->position.y + (boxDimensions.y/2) - ballRadius;
@@ -443,7 +471,7 @@ void updateFrame(GLFWwindow* window) {
 
             double elapsedTimeInFrame = gameElapsedTime - frameStart;
             double frameDuration = frameEnd - frameStart;
-            double fractionFrameComplete = elapsedTimeInFrame / frameDuration;
+            fractionFrameComplete = elapsedTimeInFrame / frameDuration;
 
             double ballYCoord;
 
@@ -515,16 +543,69 @@ void updateFrame(GLFWwindow* window) {
 
     //orthoProject = glm::ortho(0.0f, static_cast<float>(windowWidth), 0.0f, static_cast<float>(windowHeight), nearPlane, farPlane);
 
-    cameraPosition = glm::vec3(0, 2, -20);
+    // ------------------------------------ Camera position ------------------------------------ //
+
+    float speed = 100.0;
+    auto cameraFaceDirection = glm::vec3(0.0, -2.0, -1.0);
+    auto cameraPlaneDirection = glm::vec3(0.0, 0.0, -1.0);
+    auto rightDirection = glm::vec3(1.0, 0.0, 0.0);
+
+    if (glfwGetKey( window, GLFW_KEY_W ) == GLFW_PRESS) {
+        cameraPosition += cameraPlaneDirection * static_cast<float>(timeDelta) * speed;
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+        cameraPosition -= cameraPlaneDirection * static_cast<float>(timeDelta) * speed;
+    }
+
+    // Strafe left
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+        cameraPosition -= rightDirection * static_cast<float>(timeDelta) * speed;
+    }
+
+    // Strafe right
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+        cameraPosition += rightDirection * static_cast<float>(timeDelta) * speed;
+    }
+
+    cameraPosition[1] = cameraHeight;
+    
+
+    // ----------------------------------------------------------------------------------------- //
+
+    float yawFactor = 0;
+    
+    // Strafe left
+    if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) {
+        yawFactor = 0.5f;
+    }
+    // Strafe left
+    if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) {
+        yawFactor = -0.5f;
+    }
+
+    cameraFaceDirection = glm::vec3(glm::rotate(yawFactor, glm::vec3(0, 1, 0))*glm::vec4(cameraFaceDirection, 0));
 
     // Some math to make the camera move in a nice way
-    float lookRotation = -0.6 / (1 + exp(-5 * (padPositionX-0.5))) + 0.3;
+    //float lookRotation = -0.6 / (1 + exp(-5 * (padPositionX-0.5))) + 0.3;
+    //glm::rotate(lookRotation, glm::vec3(0, 1, 0)) *
+    //glm::rotate(0.3f + 0.2f * float(-padPositionZ * padPositionZ), glm::vec3(1, 0, 0))*
+    /*
     glm::mat4 cameraTransform =
-                    glm::rotate(0.3f + 0.2f * float(-padPositionZ*padPositionZ), glm::vec3(1, 0, 0)) *
-                    glm::rotate(lookRotation, glm::vec3(0, 1, 0)) *
-                    glm::translate(-cameraPosition);
+                    glm::translate(cameraPosition) *
+                    glm::rotate(1.0f, glm::vec3(0, 1, 0)) *
+                    glm::rotate(yawFactor, glm::vec3(0, 1, 0)) *
+                    glm::translate(-cameraPosition);*/
+    //glm::vec3 up = glm::cross(rightDirection, cameraFaceDirection);
+    glm::vec3 up = glm::vec3(0,1,0);
 
-    glm::mat4 VP = projection * cameraTransform;
+    glm::mat4 ViewMatrix = glm::lookAt(
+        cameraPosition,           // Camera is here
+        cameraPosition + cameraFaceDirection, // and looks here : at the same position, plus "direction"
+        up                  // Head is up (set to 0,-1,0 to look upside-down)
+    );
+
+    glm::mat4 VP = projection * ViewMatrix;
 
     // Move and rotate various SceneNodes
     boxNode->position = { 0, -10, -80 };
@@ -539,7 +620,7 @@ void updateFrame(GLFWwindow* window) {
         boxNode->position.z - (boxDimensions.z/2) + (padDimensions.z/2) + (1 - padPositionZ) * (boxDimensions.z - padDimensions.z)
     };
 
-    updateNodeTransformations(rootNode, VP, cameraTransform);
+    updateNodeTransformations(rootNode, VP, ViewMatrix);
 
 
 }
@@ -633,7 +714,6 @@ void renderNode(SceneNode* node) {
             // Common uniforms for overlay shader 
             //glBindTextureUnit(overlayShader->getUniformFromName(("textSprite[" + numSprite + "].position").c_str()), textureID);
             glBindTextureUnit(3, node->diffuseTextureID);
-            //glBindTextureUnit(overlayShader->getUniformFromName("atlas.color"), node->diffuseTextureID);
 
             glUniformMatrix4fv(overlayShader->getUniformFromName("modelMatrix"), 1, GL_FALSE, glm::value_ptr(node->modelMatrix));
             glUniformMatrix4fv(overlayShader->getUniformFromName("modelViewMatrix"), 1, GL_FALSE, glm::value_ptr(node->modelViewMatrix));
@@ -648,7 +728,6 @@ void renderNode(SceneNode* node) {
                 glBindVertexArray(node->vertexArrayObjectID);
                 glDrawElements(GL_TRIANGLES, node->VAOIndexCount, GL_UNSIGNED_INT, nullptr);
             }
-
 
             break;
         case SPRITE: 
@@ -666,7 +745,6 @@ void renderNode(SceneNode* node) {
             glUniform3fv(shader->getUniformFromName(("pointLights["+ number +"].position").c_str()), 1, glm::value_ptr(glm::vec3(pos.x, pos.y, pos.z)));
             //glUniform3fv(shader->getUniformFromName(("pointLights["+ number +"].lightColor").c_str()), 1, glm::value_ptr(lightSources[NumLightProcessed].lightColor));
             glUniform3fv(shader->getUniformFromName(("pointLights["+ number +"].lightColor").c_str()), 1, glm::value_ptr(node->lightColor));
-
             glUniform1f(shader->getUniformFromName(("pointLight[" + number + "].constant").c_str()), node->constant);
             glUniform1f(shader->getUniformFromName(("pointLight[" + number + "].linear").c_str()), node->linear);
             glUniform1f(shader->getUniformFromName(("pointLight[" + number + "].quadratic").c_str()), 0.0f);
