@@ -76,6 +76,9 @@ unsigned int generateTexture(PNGImage &image, bool useAlpha) {
     return textureID;
 }
 
+//  ---------------------------------------------------------- //
+//  ------ Rest of code is from tinygltf loader example ------ //  
+//  ---------------------------------------------------------- //
 
 std::map<int, GLuint> bindMesh(std::map<int, GLuint> vbos,
     tinygltf::Model& model, tinygltf::Mesh& mesh) {

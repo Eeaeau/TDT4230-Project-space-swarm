@@ -242,7 +242,7 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     //animatedLightNode->lightColor = glm::vec3(8);
 
     // attatch to scene graph
-    //rootNode->children.push_back(boxNode);
+    rootNode->children.push_back(boxNode);
 
     rootNode->children.push_back(padNode);
 
@@ -343,35 +343,9 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     rootNode->children.push_back(gltfNode);
 
 
-    //if (ext.compare("glb") == 0) {
-    //    std::cout << "Reading binary glTF" << std::endl;
-    //    // assume binary glTF.
-    //    ret = gltf_ctx.LoadBinaryFromFile(&model, &err, &warn,
-    //        input_filename.c_str());
-    //}
-    //else {
-    //    std::cout << "Reading ASCII glTF" << std::endl;
-    //    // assume ascii glTF.
-    //    ret =
-    //        gltf_ctx.LoadASCIIFromFile(&model, &err, &warn, input_filename.c_str());
-    //}
-
-   /* ret = gltf_ctx.LoadASCIIFromFile(&model, &err, &warn, input_filename.c_str());
-    
-
-    if (!warn.empty()) {
-        printf("Warn: %s\n", warn.c_str());
-    }
-
-    if (!err.empty()) {
-        printf("Err: %s\n", err.c_str());
-    }
-
-    if (!ret) {
-        printf("Failed to parse glTF\n");
-    }
-
-    getTimeDeltaSeconds();*/
+    ballNode->vertexArrayObjectID = bindModel(modelFromglTF);;
+    ballNode->nodeType = GLTF_GEOMETRY;
+    ballNode->model = modelFromglTF;
 
     std::cout << fmt::format("Initialized scene with {} SceneNodes.", totalChildren(rootNode)) << std::endl;
 
@@ -675,8 +649,6 @@ void renderNode(SceneNode* node) {
                 glDrawElements(GL_TRIANGLES, node->VAOIndexCount, GL_UNSIGNED_INT, nullptr);
             }
 
-
-            //auto pos = (node->currentTransformationMatrix * glm::vec4(0.0, 0.0, 0.0, 1.0));
 
             break;
         case SPRITE: 
