@@ -14,6 +14,7 @@
 #include <ctime> 
 #include <chrono>
 #include <fstream>
+#include <stdlib.h>
 
 //#include "mesh.h"
 //#include <tiny_gltf.h>
@@ -68,13 +69,14 @@ struct SceneNode {
 
 	// The Model matrix for preserving angles is needed
 	glm::mat4 modelMatrix;
+	glm::mat4* modelMatrices;
 	glm::mat4 modelViewMatrix;
 
-	// The View matrix
-	//glm::mat4 viewMatrix;
+	// Transforms
+	glm::mat4 viewProjectionMatrix;
 
 	// A MVP transformation matrix representing the transformation of the node's location relative to its parent. This matrix is updated every frame.
-	glm::mat4 currentTransformationMatrix;
+	glm::mat4 modelViewProjectionMatrix;
 
 	// The location of the node's reference point
 	glm::vec3 referencePoint;

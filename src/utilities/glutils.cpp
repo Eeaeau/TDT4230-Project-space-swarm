@@ -5,7 +5,7 @@
 
 template <class T>
 unsigned int generateAttribute(int id, int elementsPerEntry, std::vector<T> data, bool normalize) {
-    unsigned int bufferID;
+    GLuint bufferID;
     glGenBuffers(1, &bufferID);
     glBindBuffer(GL_ARRAY_BUFFER, bufferID);
     glBufferData(GL_ARRAY_BUFFER, data.size() * sizeof(T), data.data(), GL_STATIC_DRAW);
@@ -14,8 +14,9 @@ unsigned int generateAttribute(int id, int elementsPerEntry, std::vector<T> data
     return bufferID;
 }
 
-unsigned int generateBuffer(Mesh &mesh) {
-    unsigned int vaoID;
+unsigned int generateBuffer(Mesh &mesh, unsigned int amount) {
+    GLuint vaoID;
+
     glGenVertexArrays(1, &vaoID);
     glBindVertexArray(vaoID);
 
@@ -34,12 +35,14 @@ unsigned int generateBuffer(Mesh &mesh) {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBufferID);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh.indices.size() * sizeof(unsigned int), mesh.indices.data(), GL_STATIC_DRAW);
 
+
     return vaoID;
 }
 
+
 unsigned int generateTexture(PNGImage &image, bool useAlpha) {
     
-    unsigned int textureID;
+    GLuint textureID;
 
     glGenTextures(1, &textureID);
 
@@ -260,3 +263,5 @@ void drawModel(GLuint vao, tinygltf::Model& model) {
 
     glBindVertexArray(0);
 }
+
+

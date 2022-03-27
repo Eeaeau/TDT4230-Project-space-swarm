@@ -141,9 +141,6 @@ vec3 CalcPointLight(PointLight pointLight, vec3 normal, vec3 fragPos, vec3 viewD
 }
 
 
-
-
-
 void main()
 {
     vec3 normal = normalize(normal_in);
@@ -168,7 +165,7 @@ void main()
 
     result += ambient;
     result += emissionColor; 
-    result += dither(textureCoordinates);
+//    result += dither(textureCoordinates);
 
     
     color = vec4(result, 1.0);

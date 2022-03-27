@@ -8,10 +8,13 @@ in layout(location = 4) vec3 bitangent_in;
 
 
 uniform mat4 MVP;
+uniform mat4 viewProjectionMatrix;
+uniform mat4 instanceMatrix;
 uniform mat3 normalMatrix;
 uniform mat4 modelViewMatrix;
 uniform mat4 modelMatrix;
 uniform vec3 viewPos;
+uniform int useInstance;
 
 out layout(location = 0) vec3 normal_out;
 out layout(location = 1) vec2 textureCoordinates_out;
@@ -24,7 +27,7 @@ void main()
 {
     vec3 bitangent = normalize(normalMatrix * bitangent_in);
 
-   tangent_out = normalize( normalMatrix * tangent_in);
+    tangent_out = normalize( normalMatrix * tangent_in);
 
 	normal_out = normalize(normalMatrix * normal_in);
     
@@ -36,7 +39,11 @@ void main()
 
     textureCoordinates_out = textureCoordinates_in;
 
-    gl_Position = MVP * vec4(position, 1.0f);
-    
+    if (useInstance==1) {
+        gl_Position = viewProjectionMatrix * instanceMatrix * vec4(position, 1.0f);
+    } else {
+        gl_Position = MVP * vec4(position, 1.0f);
+    }
+
     fragPos = vec3(modelMatrix * vec4(position, 1.0f));
 }

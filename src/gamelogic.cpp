@@ -43,6 +43,9 @@ double padPositionZ = 0;
 float nearPlane = 0.1f;
 float farPlane = 350.f;
 
+glm::mat4 projection;
+glm::mat4 ViewMatrix;
+
 unsigned int currentKeyFrame = 0;
 unsigned int previousKeyFrame = 0;
 
@@ -67,7 +70,8 @@ double ballRadius = 3.0f;
 sf::SoundBuffer* buffer;
 Gloom::Shader* shader;
 Gloom::Shader* overlayShader;
-;
+Gloom::Shader* particleShader;
+
 sf::Sound* sound;
 
 const glm::vec3 boxDimensions(180, 90, 90);
@@ -138,8 +142,8 @@ float minCameraHeight = -10;
 void scrollCallback(GLFWwindow* window, double x, double y) {
     //scrollFactor = y;
     cameraHeight -= y * scrollFactor;
-    cameraHeight = glm::min(glm::max(cameraHeight, minCameraHeight), maxCameraHeight);
-    std::cout << y<< std::endl;
+    //cameraHeight = glm::min(glm::max(cameraHeight, minCameraHeight), maxCameraHeight);
+    cameraHeight = glm::clamp(cameraHeight, minCameraHeight, maxCameraHeight);
 }
 
 
@@ -163,17 +167,51 @@ int NumLightProcessed = 0;
 
 tinygltf::Model modelFromglTF;
 
-static std::string GetFilePathExtension(const std::string& FileName) {
-    if (FileName.find_last_of(".") != std::string::npos)
-        return FileName.substr(FileName.find_last_of(".") + 1);
-    return "";
+unsigned int amount = 1000;
+glm::mat4* instanceMatrix = new glm::mat4[amount];
+
+void distribute_models(glm::mat4* modelMatrices, unsigned int amount, float radius, float offset) {
+    for (unsigned int i = 0; i < amount; i++)
+    {
+        glm::mat4 model = glm::mat4(1.0f);
+        // 1. translation: displace along circle with 'radius' in range [-offset, offset]
+        float angle = (float)i / (float)amount * 360.0f;
+        float displacement = (rand() % (int)(2 * offset * 100)) / 100.0f - offset;
+        float x = sin(angle) * radius + displacement;
+        displacement = (rand() % (int)(2 * offset * 100)) / 100.0f - offset;
+        float y = displacement * 0.4f; // keep height of field smaller compared to width of x and z
+        displacement = (rand() % (int)(2 * offset * 100)) / 100.0f - offset;
+        float z = cos(angle) * radius + displacement;
+        model = glm::translate(model, glm::vec3(x, y, z));
+
+        // 2. scale: scale between 0.05 and 0.25f
+        float scale = (rand() % 20) / 100.0f + 0.05;
+        model = glm::scale(model, glm::vec3(scale));
+
+        // 3. rotation: add random rotation around a (semi)randomly picked rotation axis vector
+        float rotAngle = (rand() % 360);
+        model = glm::rotate(model, rotAngle, glm::vec3(0.4f, 0.6f, 0.8f));
+
+        // 4. now add to list of matrices
+        instanceMatrix[i] = model;
+    }
 }
+
+
+
 
 void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     buffer = new sf::SoundBuffer();
     if (!buffer->loadFromFile("../res/Hall of the Mountain King.ogg")) {
         return;
     }
+
+
+    std::srand(glfwGetTime()); // initialize random seed	
+    float radius = 50.0;
+    float offset = 2.5f;
+
+    distribute_models(instanceMatrix, amount, radius, offset);
 
     options = gameOptions;
 
@@ -195,6 +233,13 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
 
     overlayShader = new Gloom::Shader();
     overlayShader->makeBasicShader("../res/shaders/overlay.vert", "../res/shaders/overlay.frag");
+
+    particleShader = new Gloom::Shader();
+    particleShader->makeBasicShader("../res/shaders/particle.vert", "../res/shaders/particle.frag");
+
+
+    projection = glm::perspective(glm::radians(80.0f), float(windowWidth) / float(windowHeight), nearPlane, farPlane);
+
 
     // Create meshes
     Mesh pad = cube(padDimensions, glm::vec2(30, 40), true);
@@ -231,14 +276,9 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
 
     textEmptyNode = createSceneNode();
     textEmptyNode->position = boxCenter;
-    /*for (int i = 0; i < 3; ++i) {
-        lightSources.push_back(createSceneNode());
-    }*/
-
-    //for (auto& node : lightSources) {
-    //    node = createSceneNode();
-    //    //node->nodeType = POINT_LIGHT;
-    //}
+    
+    ball2Node->nodeType = INCTANCED_GEOMETRY;
+    ball2Node->modelMatrices = instanceMatrix;
 
     ballLightNode = createSceneNode();
     ballLightNode->nodeType = POINT_LIGHT;
@@ -539,8 +579,6 @@ void updateFrame(GLFWwindow* window) {
         }
     }
 
-    glm::mat4 projection = glm::perspective(glm::radians(80.0f), float(windowWidth) / float(windowHeight), nearPlane, farPlane);
-
     //orthoProject = glm::ortho(0.0f, static_cast<float>(windowWidth), 0.0f, static_cast<float>(windowHeight), nearPlane, farPlane);
 
     // ------------------------------------ Camera position ------------------------------------ //
@@ -599,7 +637,7 @@ void updateFrame(GLFWwindow* window) {
     //glm::vec3 up = glm::cross(rightDirection, cameraFaceDirection);
     glm::vec3 up = glm::vec3(0,1,0);
 
-    glm::mat4 ViewMatrix = glm::lookAt(
+    ViewMatrix = glm::lookAt(
         cameraPosition,           // Camera is here
         cameraPosition + cameraFaceDirection, // and looks here : at the same position, plus "direction"
         up                  // Head is up (set to 0,-1,0 to look upside-down)
@@ -620,12 +658,12 @@ void updateFrame(GLFWwindow* window) {
         boxNode->position.z - (boxDimensions.z/2) + (padDimensions.z/2) + (1 - padPositionZ) * (boxDimensions.z - padDimensions.z)
     };
 
-    updateNodeTransformations(rootNode, VP, ViewMatrix);
+    updateNodeTransformations(rootNode, VP);
 
 
 }
 
-void updateNodeTransformations(SceneNode* node, glm::mat4 transformationThusFar, glm::mat4 viewTransformation) {
+void updateNodeTransformations(SceneNode* node, glm::mat4 transformationThusFar) {
     glm::mat4 transformationMatrix =
               glm::translate(node->position)
             * glm::translate(node->referencePoint)
@@ -636,8 +674,9 @@ void updateNodeTransformations(SceneNode* node, glm::mat4 transformationThusFar,
             * glm::translate(-node->referencePoint);
 
     node->modelMatrix = transformationMatrix; // M
-    node->modelViewMatrix = viewTransformation * transformationMatrix; // MV
-    node->currentTransformationMatrix = transformationThusFar * transformationMatrix; // model view projection matrix
+    node->modelViewMatrix = ViewMatrix * transformationMatrix; // MV
+    node->viewProjectionMatrix = projection * ViewMatrix; // MV
+    node->modelViewProjectionMatrix = transformationThusFar * transformationMatrix; // model view projection matrix
 
     switch(node->nodeType) {
         case GEOMETRY: break;
@@ -646,7 +685,7 @@ void updateNodeTransformations(SceneNode* node, glm::mat4 transformationThusFar,
     }
 
     for(SceneNode* child : node->children) {
-        updateNodeTransformations(child, node->currentTransformationMatrix, viewTransformation);
+        updateNodeTransformations(child, node->modelViewProjectionMatrix);
     }
 }
 
@@ -657,9 +696,11 @@ void renderNode(SceneNode* node) {
     
     // Common uniforms for phong shader 
     shader->activate();
-    glUniformMatrix4fv(shader->getUniformFromName("MVP"), 1, GL_FALSE, glm::value_ptr(node->currentTransformationMatrix)); // MVP
+    glUniformMatrix4fv(shader->getUniformFromName("MVP"), 1, GL_FALSE, glm::value_ptr(node->modelViewProjectionMatrix)); // MVP
 
     glUniformMatrix4fv(shader->getUniformFromName("modelViewMatrix"), 1, GL_FALSE, glm::value_ptr(node->modelViewMatrix));
+
+    glUniformMatrix4fv(shader->getUniformFromName("viewProjectionMatrix"), 1, GL_FALSE, glm::value_ptr(node->viewProjectionMatrix));
 
     glUniform3fv(shader->getUniformFromName("textPos"), 1, glm::value_ptr(screenPos));
 
@@ -670,15 +711,10 @@ void renderNode(SceneNode* node) {
 
 
     glUniform1i(shader->getUniformFromName("useTexture"), 0);
-
-    
-    //unsigned int diffuseTextureID = generateTexture(node->normalTexture, false);
-    //node->normalTextureID = diffuseTextureID;
-    //unsigned int normalTextureID = generateTexture(node->diffuseTexture, false);
-    //node->diffuseTextureID = normalTextureID;
+    glUniform1i(shader->getUniformFromName("useInstance"), 0);
 
     std::string number = std::to_string(NumLightProcessed);
-    std::string numSprite = std::to_string(0);
+    //std::string numSprite = std::to_string(0);
     //std::string numPBR = std::to_string(0);
     switch(node->nodeType) {
         case GEOMETRY:
@@ -688,11 +724,28 @@ void renderNode(SceneNode* node) {
                 glDrawElements(GL_TRIANGLES, node->VAOIndexCount, GL_UNSIGNED_INT, nullptr);
             }
             break;
+        case INCTANCED_GEOMETRY:
+            shader->activate();
+            glUniform1i(shader->getUniformFromName("useInstance"), 1);
+            if (node->vertexArrayObjectID != -1) {
+                glUniformMatrix4fv(shader->getUniformFromName("viewProjectionMatrix"), 1, GL_FALSE, glm::value_ptr(node->modelMatrix));
+
+                /*glBindVertexArray(node->vertexArrayObjectID);
+                glDrawElementsInstanced(GL_TRIANGLES, rock.meshes[i].indices.size(), GL_UNSIGNED_INT, 0, amount
+                );*/
+
+                //glBindVertexArray(node->vertexArrayObjectID);
+                //glDrawElements(GL_TRIANGLES, node->VAOIndexCount, GL_UNSIGNED_INT, nullptr);
+            }
+            break;
         case GLTF_GEOMETRY:
             shader->activate();
-            //drawModel(node->vertexArrayObjectID, node->model);
-            drawModel(node->vertexArrayObjectID, node->model);
+            if (node->vertexArrayObjectID != -1) {
+                //drawModel(node->vertexArrayObjectID, node->model);
+                drawModel(node->vertexArrayObjectID, node->model);
+            }
             break;
+        
         case TEXTURED_GEOMETRY:
             shader->activate();
 
@@ -741,7 +794,7 @@ void renderNode(SceneNode* node) {
         case POINT_LIGHT: 
             shader->activate();
             //glUniform1ui(7, lightSources.size());
-            auto pos = (node->currentTransformationMatrix * glm::vec4(0.0, 0.0, 0.0, 1.0));
+            auto pos = (node->modelViewProjectionMatrix * glm::vec4(0.0, 0.0, 0.0, 1.0));
             glUniform3fv(shader->getUniformFromName(("pointLights["+ number +"].position").c_str()), 1, glm::value_ptr(glm::vec3(pos.x, pos.y, pos.z)));
             //glUniform3fv(shader->getUniformFromName(("pointLights["+ number +"].lightColor").c_str()), 1, glm::value_ptr(lightSources[NumLightProcessed].lightColor));
             glUniform3fv(shader->getUniformFromName(("pointLights["+ number +"].lightColor").c_str()), 1, glm::value_ptr(node->lightColor));

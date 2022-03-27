@@ -10,7 +10,7 @@
 
 #define BUFFER_OFFSET(i) ((char *)NULL + (i))
 
-unsigned int generateBuffer(Mesh &mesh);
+unsigned int generateBuffer(Mesh &mesh, const unsigned int amount = 1);
 
 unsigned int generateTexture(PNGImage& image, bool useAlpha = false);
 

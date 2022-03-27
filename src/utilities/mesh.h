@@ -18,3 +18,9 @@ struct Mesh {
 
 
 bool loadModel(tinygltf::Model& model, const char* filename);
+
+static std::string GetFilePathExtension(const std::string& FileName) {
+    if (FileName.find_last_of(".") != std::string::npos)
+        return FileName.substr(FileName.find_last_of(".") + 1);
+    return "";
+}
