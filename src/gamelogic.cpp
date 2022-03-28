@@ -64,9 +64,10 @@ double ballRadius = 3.0f;
 
 // These are heap allocated, because they should not be initialised at the start of the program
 sf::SoundBuffer* buffer;
-Gloom::Shader* shader;
+Gloom::Shader* phongShader;
 Gloom::Shader* overlayShader;
 Gloom::Shader* particleShader;
+Gloom::Shader* instancingShader;
 
 sf::Sound* sound;
 
@@ -148,29 +149,6 @@ static std::string GetFilePathExtension(const std::string& FileName) {
     return "";
 }
 
-bool loadModel(GLModel& model, const char* filename) {
-    tinygltf::TinyGLTF loader;
-    std::string err;
-    std::string warn;
-
-    bool res = loader.LoadASCIIFromFile(&(model), &err, &warn, filename);
-    if (!warn.empty()) {
-        std::cout << "WARN: " << warn << std::endl;
-    }
-
-    if (!err.empty()) {
-        std::cout << "ERR: " << err << std::endl;
-    }
-
-    if (!res)
-        std::cout << "Failed to load glTF: " << filename << std::endl;
-    else
-        std::cout << "Loaded glTF: " << filename << std::endl;
-
-    return res;
-}
-
-
 //// A few lines to help you if you've never used c++ structs
 //struct LightSource {
 //    LightSource() {
@@ -190,7 +168,7 @@ std::vector<SceneNode*> lightSources;
 int NumLightProcessed = 0;
 
 //tinygltf::Model modelFromglTF;
-GLModel teapot;
+
 
 unsigned int amount = 1000;
 glm::mat4* instanceMatrix = new glm::mat4[amount];
@@ -252,9 +230,9 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     glfwSetScrollCallback(window, scrollCallback);
     //glfwSetKeyCallback(window, keyCallback);
 
-    shader = new Gloom::Shader();
-    shader->makeBasicShader("../res/shaders/simple.vert", "../res/shaders/simple.frag");
-    shader->activate();
+    phongShader = new Gloom::Shader();
+    phongShader->makeBasicShader("../res/shaders/simple.vert", "../res/shaders/simple.frag");
+    phongShader->activate();
 
     overlayShader = new Gloom::Shader();
     overlayShader->makeBasicShader("../res/shaders/overlay.vert", "../res/shaders/overlay.frag");
@@ -262,6 +240,8 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     particleShader = new Gloom::Shader();
     particleShader->makeBasicShader("../res/shaders/particle.vert", "../res/shaders/particle.frag");
 
+    instancingShader = new Gloom::Shader();
+    instancingShader->makeBasicShader("../res/shaders/instancing.vert", "../res/shaders/simple.frag");
 
     projection = glm::perspective(glm::radians(80.0f), float(windowWidth) / float(windowHeight), nearPlane, farPlane);
 
@@ -424,10 +404,12 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
 
     bool ret = false;
 
-    tinygltf::Model teapotModel;
+    GLModel teapot(input_filename.c_str());
+
+    //tinygltf::Model teapotModel;
 
     //teapot.model = teapotModel;
-    if (!loadModel(teapot, input_filename.c_str())) return;
+    //if (!loadModel(teapot, input_filename.c_str())) return;
     
     
     gltfNode->vertexArrayObjectID = teapot.bindModel();
@@ -611,9 +593,14 @@ void updateFrame(GLFWwindow* window) {
     // ------------------------------------ Camera position ------------------------------------ //
 
     float speed = 100.0;
+    float speedModifier = 2.0;
     auto cameraFaceDirection = glm::vec3(0.0, -2.0, -1.0);
     auto cameraPlaneDirection = glm::vec3(0.0, 0.0, -1.0);
     auto rightDirection = glm::vec3(1.0, 0.0, 0.0);
+
+    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
+        speed *= speedModifier;
+    }
 
     if (glfwGetKey( window, GLFW_KEY_W ) == GLFW_PRESS) {
         cameraPosition += cameraPlaneDirection * static_cast<float>(timeDelta) * speed;
@@ -722,40 +709,40 @@ void renderNode(SceneNode* node) {
 
     
     // Common uniforms for phong shader 
-    shader->activate();
-    glUniformMatrix4fv(shader->getUniformFromName("MVP"), 1, GL_FALSE, glm::value_ptr(node->modelViewProjectionMatrix)); // MVP
+    phongShader->activate();
+    glUniformMatrix4fv(phongShader->getUniformFromName("MVP"), 1, GL_FALSE, glm::value_ptr(node->modelViewProjectionMatrix)); // MVP
 
-    glUniformMatrix4fv(shader->getUniformFromName("modelViewMatrix"), 1, GL_FALSE, glm::value_ptr(node->modelViewMatrix));
+    glUniformMatrix4fv(phongShader->getUniformFromName("modelViewMatrix"), 1, GL_FALSE, glm::value_ptr(node->modelViewMatrix));
 
-    glUniformMatrix4fv(shader->getUniformFromName("viewProjectionMatrix"), 1, GL_FALSE, glm::value_ptr(node->viewProjectionMatrix));
+    glUniformMatrix4fv(phongShader->getUniformFromName("viewProjectionMatrix"), 1, GL_FALSE, glm::value_ptr(node->viewProjectionMatrix));
 
-    glUniform3fv(shader->getUniformFromName("textPos"), 1, glm::value_ptr(screenPos));
+    glUniform3fv(phongShader->getUniformFromName("textPos"), 1, glm::value_ptr(screenPos));
 
-    glUniformMatrix4fv(shader->getUniformFromName("modelMatrix"), 1, GL_FALSE, glm::value_ptr(node->modelMatrix));
+    glUniformMatrix4fv(phongShader->getUniformFromName("modelMatrix"), 1, GL_FALSE, glm::value_ptr(node->modelMatrix));
 
     glm::mat3 normalMatrix = glm::mat3(glm::transpose(glm::inverse(node->modelMatrix)));
-    glUniformMatrix3fv(shader->getUniformFromName("normalMatrix"), 1, GL_FALSE, glm::value_ptr(normalMatrix));
+    glUniformMatrix3fv(phongShader->getUniformFromName("normalMatrix"), 1, GL_FALSE, glm::value_ptr(normalMatrix));
 
 
-    glUniform1i(shader->getUniformFromName("useTexture"), 0);
-    glUniform1i(shader->getUniformFromName("useInstance"), 0);
+    glUniform1i(phongShader->getUniformFromName("useTexture"), 0);
+    glUniform1i(phongShader->getUniformFromName("useInstance"), 0);
 
     std::string number = std::to_string(NumLightProcessed);
     //std::string numSprite = std::to_string(0);
     //std::string numPBR = std::to_string(0);
     switch(node->nodeType) {
         case GEOMETRY:
-            shader->activate();
+            phongShader->activate();
             if(node->vertexArrayObjectID != -1) {
                 glBindVertexArray(node->vertexArrayObjectID);
                 glDrawElements(GL_TRIANGLES, node->VAOIndexCount, GL_UNSIGNED_INT, nullptr);
             }
             break;
         case INCTANCED_GEOMETRY:
-            shader->activate();
-            glUniform1i(shader->getUniformFromName("useInstance"), 1);
+            instancingShader->activate();
+            //glUniform1i(phongShader->getUniformFromName("useInstance"), 1);
             if (node->vertexArrayObjectID != -1) {
-                glUniformMatrix4fv(shader->getUniformFromName("viewProjectionMatrix"), 1, GL_FALSE, glm::value_ptr(node->modelMatrix));
+                glUniformMatrix4fv(phongShader->getUniformFromName("viewProjectionMatrix"), 1, GL_FALSE, glm::value_ptr(node->modelMatrix));
 
                 /*glBindVertexArray(node->vertexArrayObjectID);
                 glDrawElementsInstanced(GL_TRIANGLES, rock.meshes[i].indices.size(), GL_UNSIGNED_INT, 0, amount
@@ -766,7 +753,7 @@ void renderNode(SceneNode* node) {
             }
             break;
         case GLTF_GEOMETRY:
-            shader->activate();
+            phongShader->activate();
             if (node->vertexArrayObjectID != -1) {
                 //drawModel(node->vertexArrayObjectID, node->model);
 
@@ -775,15 +762,15 @@ void renderNode(SceneNode* node) {
             break;
         
         case TEXTURED_GEOMETRY:
-            shader->activate();
+            phongShader->activate();
 
-            glUniform1i(shader->getUniformFromName("useTexture"), 1);
+            glUniform1i(phongShader->getUniformFromName("useTexture"), 1);
             glBindTextureUnit(1, node->diffuseTextureID);
             glBindTextureUnit(2, node->normalTextureID);
             glBindTextureUnit(3, node->roughnessTextureID);
             
-        /*    glBindTextureUnit(shader->getUniformFromName("texture_in.diffuse"), node->diffuseTextureID);
-            glBindTextureUnit(shader->getUniformFromName("texture_in.normal"), node->normalTextureID);*/
+        /*    glBindTextureUnit(phongShader->getUniformFromName("texture_in.diffuse"), node->diffuseTextureID);
+            glBindTextureUnit(phongShader->getUniformFromName("texture_in.normal"), node->normalTextureID);*/
 
             if (node->vertexArrayObjectID != -1) {
                 glBindVertexArray(node->vertexArrayObjectID);
@@ -792,7 +779,7 @@ void renderNode(SceneNode* node) {
             break;
         case OVERLAY: 
             overlayShader->activate();
-            // Common uniforms for overlay shader 
+            // Common uniforms for overlay phongShader 
             //glBindTextureUnit(overlayShader->getUniformFromName(("textSprite[" + numSprite + "].position").c_str()), textureID);
             glBindTextureUnit(3, node->diffuseTextureID);
 
@@ -817,18 +804,18 @@ void renderNode(SceneNode* node) {
                 glDrawElements(GL_TRIANGLES, node->VAOIndexCount, GL_UNSIGNED_INT, nullptr);
             }
             //auto pos = (node->currentTransformationMatrix * glm::vec4(0.0, 0.0, 0.0, 1.0));
-            //glUniform3fv(shader->getUniformFromName(("textSprite[" + numSprite + "].position").c_str()), 1, glm::value_ptr(glm::vec3(pos.x, pos.y, pos.z)));
+            //glUniform3fv(phongShader->getUniformFromName(("textSprite[" + numSprite + "].position").c_str()), 1, glm::value_ptr(glm::vec3(pos.x, pos.y, pos.z)));
             break;
         case POINT_LIGHT: 
-            shader->activate();
+            phongShader->activate();
             //glUniform1ui(7, lightSources.size());
             auto pos = (node->modelViewProjectionMatrix * glm::vec4(0.0, 0.0, 0.0, 1.0));
-            glUniform3fv(shader->getUniformFromName(("pointLights["+ number +"].position").c_str()), 1, glm::value_ptr(glm::vec3(pos.x, pos.y, pos.z)));
-            //glUniform3fv(shader->getUniformFromName(("pointLights["+ number +"].lightColor").c_str()), 1, glm::value_ptr(lightSources[NumLightProcessed].lightColor));
-            glUniform3fv(shader->getUniformFromName(("pointLights["+ number +"].lightColor").c_str()), 1, glm::value_ptr(node->lightColor));
-            glUniform1f(shader->getUniformFromName(("pointLight[" + number + "].constant").c_str()), node->constant);
-            glUniform1f(shader->getUniformFromName(("pointLight[" + number + "].linear").c_str()), node->linear);
-            glUniform1f(shader->getUniformFromName(("pointLight[" + number + "].quadratic").c_str()), 0.0f);
+            glUniform3fv(phongShader->getUniformFromName(("pointLights["+ number +"].position").c_str()), 1, glm::value_ptr(glm::vec3(pos.x, pos.y, pos.z)));
+            //glUniform3fv(phongShader->getUniformFromName(("pointLights["+ number +"].lightColor").c_str()), 1, glm::value_ptr(lightSources[NumLightProcessed].lightColor));
+            glUniform3fv(phongShader->getUniformFromName(("pointLights["+ number +"].lightColor").c_str()), 1, glm::value_ptr(node->lightColor));
+            glUniform1f(phongShader->getUniformFromName(("pointLight[" + number + "].constant").c_str()), node->constant);
+            glUniform1f(phongShader->getUniformFromName(("pointLight[" + number + "].linear").c_str()), node->linear);
+            glUniform1f(phongShader->getUniformFromName(("pointLight[" + number + "].quadratic").c_str()), 0.0f);
             NumLightProcessed++;
             break;
         case SPOT_LIGHT: break;
@@ -849,12 +836,12 @@ void renderFrame(GLFWwindow* window) {
     //unsigned int atlasNormalID = generateTexture(textureAtlasNode->diffuseTexture, false);
     //textureAtlasNode->diffuseTextureID = atlasNormalID;
 
-    glUniform3fv(shader->getUniformFromName("viewPos"), 1, glm::value_ptr(cameraPosition));
+    glUniform3fv(phongShader->getUniformFromName("viewPos"), 1, glm::value_ptr(cameraPosition));
     glUniform3fv(overlayShader->getUniformFromName("viewPos"), 1, glm::value_ptr(cameraPosition));
-    glUniform3fv(shader->getUniformFromName("lightTest"), 1, glm::value_ptr(glm::vec3(1, 0, 0)));
+    glUniform3fv(phongShader->getUniformFromName("lightTest"), 1, glm::value_ptr(glm::vec3(1, 0, 0)));
 
     auto ballPos = glm::vec3(ballNode->modelMatrix * glm::vec4(0.0, 0.0, 0.0, 1.0));
-    glUniform3fv(shader->getUniformFromName("ballPos"), 1, glm::value_ptr(ballPos));
+    glUniform3fv(phongShader->getUniformFromName("ballPos"), 1, glm::value_ptr(ballPos));
     int windowWidth, windowHeight;
     glfwGetWindowSize(window, &windowWidth, &windowHeight);
     glViewport(0, 0, windowWidth, windowHeight);

@@ -1,7 +1,8 @@
 #pragma once
 
 #include <glad/glad.h>
-//#include <GLFW/glfw3.h>
+#include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
 //#include <vector>
 #include <iostream>
 
@@ -12,14 +13,22 @@
 class GLModel : public tinygltf::Model
 {
 public:
-    //GLModel::GLModel() {
-    //    //this->model = model;
-    //}
+    GLModel() = default;
+    GLModel(const char* filename, unsigned int instancing = 1, std::vector<glm::mat4> instanceMatrix = {});
+
     //tinygltf::Model model;
     GLuint bindModel();
     void drawModel(GLuint vao);
 
 private:
+    bool loadModel(const char* filename);
+
+    // Holds number of instances (if 1 the mesh will be rendered normally)
+    unsigned int instancing; 
+
+    std::vector<glm::mat4> matricesMeshes;
+    std::vector<glm::mat4> instanceMatrix;
+
     std::map<int, GLuint> bindMesh(std::map<int, GLuint> vbos,
         tinygltf::Model& model, tinygltf::Mesh& mesh);
 

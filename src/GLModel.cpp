@@ -1,9 +1,50 @@
 #include "GLModel.hpp"
 
 
-//  ---------------------------------------------------------- //
-//  ------ Rest of code is from tinygltf loader example ------ //  
-//  ---------------------------------------------------------- //
+//  ------------------------------------------------------ //
+//  ------ Code is based on tinygltf loader example ------ //  
+//  ------------------------------------------------------ //
+
+
+
+
+void linkAttrib(GLuint bufferID, GLuint layout, GLuint numComponents, GLenum type, GLsizeiptr stride, void* offset) {
+    glBindBuffer(GL_ARRAY_BUFFER, bufferID);
+    glVertexAttribPointer(layout, numComponents, type, GL_FALSE, stride, offset);
+    glEnableVertexAttribArray(layout);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+GLModel::GLModel(const char* filename, unsigned int instancing, std::vector<glm::mat4> instanceMatrix)
+{
+    loadModel(filename);
+    this->instancing = instancing;
+    this->instanceMatrix = instanceMatrix;
+}
+
+bool GLModel::loadModel(const char* filename)
+{
+    tinygltf::TinyGLTF loader;
+    std::string err;
+    std::string warn;
+
+    bool res = loader.LoadASCIIFromFile(this, &err, &warn, filename);
+    if (!warn.empty()) {
+        std::cout << "WARN: " << warn << std::endl;
+    }
+
+    if (!err.empty()) {
+        std::cout << "ERR: " << err << std::endl;
+    }
+
+    if (!res)
+        std::cout << "Failed to load glTF: " << filename << std::endl;
+    else
+        std::cout << "Loaded glTF: " << filename << std::endl;
+
+    return res;
+}
+
 
 std::map<int, GLuint> GLModel::bindMesh(std::map<int, GLuint> vbos,
     tinygltf::Model& model, tinygltf::Mesh& mesh) {
@@ -38,6 +79,8 @@ std::map<int, GLuint> GLModel::bindMesh(std::map<int, GLuint> vbos,
             &buffer.data.at(0) + bufferView.byteOffset, GL_STATIC_DRAW);
     }
 
+    
+
     for (size_t i = 0; i < mesh.primitives.size(); ++i) {
         tinygltf::Primitive primitive = mesh.primitives[i];
         tinygltf::Accessor indexAccessor = model.accessors[primitive.indices];
@@ -65,6 +108,25 @@ std::map<int, GLuint> GLModel::bindMesh(std::map<int, GLuint> vbos,
             }
             else
                 std::cout << "vaa missing: " << attrib.first << std::endl;
+
+            if (instancing != 1) {
+
+                // vertex buffer object
+                GLuint bufferID;
+                glGenBuffers(1, &bufferID);
+                glBufferData(GL_ARRAY_BUFFER, instancing * sizeof(glm::mat4), instanceMatrix.data(), GL_STATIC_DRAW);
+
+                // Can't link to a mat4 so you need to link four vec4s
+                linkAttrib(bufferID, 4, 4, GL_FLOAT, sizeof(glm::mat4), (void*)0);
+
+                // Makes it so the transform is only switched when drawing the next instance
+                glVertexAttribDivisor(4, 1);
+                glVertexAttribDivisor(5, 1);
+                glVertexAttribDivisor(6, 1);
+                glVertexAttribDivisor(7, 1);
+
+            }
+
         }
 
         if (model.textures.size() > 0) {
@@ -177,13 +239,14 @@ void GLModel::drawModelNodes(tinygltf::Model& model, tinygltf::Node& node) {
 
 void GLModel::drawModel(GLuint vao) {
     glBindVertexArray(vao);
-
     const tinygltf::Scene& scene = this->scenes[this->defaultScene];
     for (size_t i = 0; i < scene.nodes.size(); ++i) {
         drawModelNodes(*this, this->nodes[scene.nodes[i]]);
     }
-
+    
     glBindVertexArray(0);
 }
+
+
 
 
