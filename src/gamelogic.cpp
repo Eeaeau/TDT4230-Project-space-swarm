@@ -170,10 +170,8 @@ int NumLightProcessed = 0;
 //tinygltf::Model modelFromglTF;
 
 
-unsigned int amount = 1000;
-glm::mat4* instanceMatrix = new glm::mat4[amount];
-
-void distribute_models(glm::mat4* modelMatrices, unsigned int amount, float radius, float offset) {
+std::vector <glm::mat4> distributeOnDisc(unsigned int amount, float radius, float offset) {
+    std::vector <glm::mat4> instanceMatrix(amount);
     for (unsigned int i = 0; i < amount; i++)
     {
         glm::mat4 model = glm::mat4(1.0f);
@@ -198,6 +196,7 @@ void distribute_models(glm::mat4* modelMatrices, unsigned int amount, float radi
         // 4. now add to list of matrices
         instanceMatrix[i] = model;
     }
+    return instanceMatrix;
 }
 
 
@@ -209,12 +208,7 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
         return;
     }
 
-
-    std::srand(glfwGetTime()); // initialize random seed	
-    float radius = 50.0;
-    float offset = 2.5f;
-
-    distribute_models(instanceMatrix, amount, radius, offset);
+    
 
     options = gameOptions;
 
@@ -282,8 +276,8 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     textEmptyNode = createSceneNode();
     textEmptyNode->position = boxCenter;
     
-    ball2Node->nodeType = INCTANCED_GEOMETRY;
-    ball2Node->modelMatrices = instanceMatrix;
+    //ball2Node->nodeType = INCTANCED_GEOMETRY;
+    //ball2Node->modelMatrices = instanceMatrix;
 
     ballLightNode = createSceneNode();
     ballLightNode->nodeType = POINT_LIGHT;
@@ -396,6 +390,15 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     //textureAtlasNode->normalTextureID = brickNormalID;
 
     
+    unsigned int amount = 10;
+    //glm::mat4* instanceMatrix = new glm::mat4[amount];
+    
+
+    std::srand(glfwGetTime()); // initialize random seed	
+    float radius = 20.0;
+    float offset = 2.5f;
+
+    auto instanceMatrix = distributeOnDisc(amount, radius, offset);
 
     
     std::string input_filename = "../res/mesh/teapot.gltf";
@@ -404,7 +407,7 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
 
     bool ret = false;
 
-    GLModel teapot(input_filename.c_str());
+    GLModel teapot(input_filename.c_str(), amount, instanceMatrix);
 
     //tinygltf::Model teapotModel;
 

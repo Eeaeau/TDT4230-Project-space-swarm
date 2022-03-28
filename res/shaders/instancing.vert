@@ -5,11 +5,11 @@ in layout(location = 1) vec3 normal_in;
 in layout(location = 2) vec2 textureCoordinates_in;
 in layout(location = 3) vec3 tangent_in;
 in layout(location = 4) vec3 bitangent_in;
-
+in layout(location = 5) mat4 instanceMatrix;
 
 uniform mat4 MVP;
 uniform mat4 viewProjectionMatrix;
-uniform mat4 instanceMatrix;
+//uniform mat4 instanceMatrix;
 uniform mat3 normalMatrix;
 uniform mat4 modelViewMatrix;
 uniform mat4 modelMatrix;

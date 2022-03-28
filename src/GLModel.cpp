@@ -109,24 +109,6 @@ std::map<int, GLuint> GLModel::bindMesh(std::map<int, GLuint> vbos,
             else
                 std::cout << "vaa missing: " << attrib.first << std::endl;
 
-            if (instancing != 1) {
-
-                // vertex buffer object
-                GLuint bufferID;
-                glGenBuffers(1, &bufferID);
-                glBufferData(GL_ARRAY_BUFFER, instancing * sizeof(glm::mat4), instanceMatrix.data(), GL_STATIC_DRAW);
-
-                // Can't link to a mat4 so you need to link four vec4s
-                linkAttrib(bufferID, 4, 4, GL_FLOAT, sizeof(glm::mat4), (void*)0);
-
-                // Makes it so the transform is only switched when drawing the next instance
-                glVertexAttribDivisor(4, 1);
-                glVertexAttribDivisor(5, 1);
-                glVertexAttribDivisor(6, 1);
-                glVertexAttribDivisor(7, 1);
-
-            }
-
         }
 
         if (model.textures.size() > 0) {
@@ -186,6 +168,30 @@ void GLModel::bindModelNodes(std::map<int, GLuint> vbos, tinygltf::Model& model,
     tinygltf::Node& node) {
     if ((node.mesh >= 0) && (node.mesh < model.meshes.size())) {
         bindMesh(vbos, model, model.meshes[node.mesh]);
+
+        if (instancing != 1) {
+
+            // vertex buffer object
+            GLuint bufferID;
+            glGenBuffers(1, &bufferID);
+            glBufferData(GL_ARRAY_BUFFER, instanceMatrix.size() * sizeof(glm::mat4), instanceMatrix.data(), GL_STATIC_DRAW);
+
+            // Can't link to a mat4 so you need to link four vec4s
+            linkAttrib(bufferID, 5, 5, GL_FLOAT, sizeof(glm::mat4), (void*)0);
+            linkAttrib(bufferID, 6, 5, GL_FLOAT, sizeof(glm::mat4), (void*)(1 * sizeof(glm::vec4)));
+            linkAttrib(bufferID, 7, 5, GL_FLOAT, sizeof(glm::mat4), (void*)(1 * sizeof(glm::vec4)));
+            linkAttrib(bufferID, 8, 5, GL_FLOAT, sizeof(glm::mat4), (void*)(1 * sizeof(glm::vec4)));
+
+            // Makes it so the transform is only switched when drawing the next instance
+            glVertexAttribDivisor(4, 1);
+            glVertexAttribDivisor(5, 1);
+            glVertexAttribDivisor(6, 1);
+            glVertexAttribDivisor(7, 1);
+
+            glBindVertexArray(0);
+
+        }
+
     }
 
     for (size_t i = 0; i < node.children.size(); i++) {
@@ -221,9 +227,17 @@ void GLModel::drawMesh(tinygltf::Model& model, tinygltf::Mesh& mesh) {
         tinygltf::Primitive primitive = mesh.primitives[i];
         tinygltf::Accessor indexAccessor = model.accessors[primitive.indices];
 
-        glDrawElements(primitive.mode, indexAccessor.count,
-            indexAccessor.componentType,
-            BUFFER_OFFSET(indexAccessor.byteOffset));
+        if (instancing == 1)
+        {
+            glDrawElements(primitive.mode, indexAccessor.count,
+                indexAccessor.componentType,
+                BUFFER_OFFSET(indexAccessor.byteOffset));
+        }
+        else {
+            glDrawElementsInstanced(primitive.mode, indexAccessor.count,
+                indexAccessor.componentType,
+                BUFFER_OFFSET(indexAccessor.byteOffset), instancing);
+        }
     }
 }
 
