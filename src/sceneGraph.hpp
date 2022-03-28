@@ -95,7 +95,7 @@ struct SceneNode {
 	SceneNodeType nodeType;
 
 	//tinygltf::Model model;
-	//GLModel model;
+	GLModel model;
 };
 
 SceneNode* createSceneNode();

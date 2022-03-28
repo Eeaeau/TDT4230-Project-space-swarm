@@ -9,19 +9,13 @@
 #include <glm/vec3.hpp>
 #include <iostream>
 #include <utilities/timeutils.h>
-
-
-
 #include <utilities/mesh.h>
-
 #include <utilities/shapes.h>
 #include <utilities/glutils.h>
 #include <SFML/Audio/Sound.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <fmt/format.h>
-
-
 
 #define GLM_ENABLE_EXPERIMENTAL
 
@@ -439,14 +433,14 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     gltfNode->vertexArrayObjectID = teapot.bindModel();
     gltfNode->position = boxCenter;
     gltfNode->nodeType = GLTF_GEOMETRY;
-    //gltfNode->model = teapot;
+    gltfNode->model = teapot;
     
     rootNode->children.push_back(gltfNode);
 
 
     ballNode->vertexArrayObjectID = teapot.bindModel();
     ballNode->nodeType = GLTF_GEOMETRY;
-    //ballNode->model = teapot;
+    ballNode->model = teapot;
 
     std::cout << fmt::format("Initialized scene with {} SceneNodes.", totalChildren(rootNode)) << std::endl;
 
@@ -776,7 +770,7 @@ void renderNode(SceneNode* node) {
             if (node->vertexArrayObjectID != -1) {
                 //drawModel(node->vertexArrayObjectID, node->model);
 
-                //node->model.drawModel(node->vertexArrayObjectID);;
+                node->model.drawModel(node->vertexArrayObjectID);;
             }
             break;
         
