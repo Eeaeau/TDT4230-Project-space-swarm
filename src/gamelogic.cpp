@@ -10,13 +10,7 @@
 #include <iostream>
 #include <utilities/timeutils.h>
 
-// Define these only in *one* .cc file.
-#define TINYGLTF_IMPLEMENTATION
-#define STB_IMAGE_IMPLEMENTATION
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-//#define STBI_MSC_SECURE_CRT
-//#define TINYGLTF_NOEXCEPTION // optional. disable exception handling.
-//#define JSON_NOEXCEPTION
+
 
 #include <utilities/mesh.h>
 
@@ -27,7 +21,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <fmt/format.h>
 
-#include "sceneGraph.hpp"
+
 
 #define GLM_ENABLE_EXPERIMENTAL
 
@@ -38,7 +32,6 @@
 
 #include <fstream>
 
-#include "GLModel.hpp"
 
 enum KeyFrameAction {
     BOTTOM, TOP

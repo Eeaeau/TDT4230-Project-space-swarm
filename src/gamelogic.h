@@ -2,10 +2,10 @@
 
 #include <utilities/window.hpp>
 
-#include "sceneGraph.hpp"
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "sceneGraph.hpp"
 
 void updateNodeTransformations(SceneNode* node, glm::mat4 transformationThusFar);
 void initGame(GLFWwindow* window, CommandLineOptions options);

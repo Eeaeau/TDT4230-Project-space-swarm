@@ -1,7 +1,6 @@
 #pragma once
 
 #include "mesh.h"
-//#include "GLModel.hpp"
 #include <glad/glad.h>
 #include "utilities/imageLoader.hpp"
 #include <iostream>

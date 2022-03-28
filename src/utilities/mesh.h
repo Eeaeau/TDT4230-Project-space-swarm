@@ -4,7 +4,7 @@
 #include <iostream>
 #include <glm/glm.hpp>
 
-//#include "GLModel.hpp"
+
 
 struct Mesh {
     std::vector<glm::vec3> vertices;

@@ -17,7 +17,7 @@
 #include <stdlib.h>
 
 //#include "mesh.h"
-//#include "GLModel.hpp"
+#include "GLModel.hpp"
 
 enum SceneNodeType {
 	GEOMETRY, INCTANCED_GEOMETRY, GLTF_GEOMETRY, TEXTURED_GEOMETRY, OVERLAY, SPRITE, POINT_LIGHT, SPOT_LIGHT

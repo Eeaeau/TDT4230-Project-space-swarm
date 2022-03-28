@@ -1,5 +1,14 @@
+// Define these only in *one* .cc file.
+#define TINYGLTF_IMPLEMENTATION
+#define STB_IMAGE_IMPLEMENTATION
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+//#define STBI_MSC_SECURE_CRT
+//#define TINYGLTF_NOEXCEPTION // optional. disable exception handling.
+//#define JSON_NOEXCEPTION
+
 #include "sceneGraph.hpp"
 #include <iostream>
+
 
 
 SceneNode* createSceneNode() {
