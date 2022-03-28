@@ -4,7 +4,7 @@
 #include <iostream>
 #include <glm/glm.hpp>
 
-#include "tiny_gltf.h"
+//#include "GLModel.hpp"
 
 struct Mesh {
     std::vector<glm::vec3> vertices;
@@ -17,10 +17,10 @@ struct Mesh {
 };
 
 
-bool loadModel(tinygltf::Model& model, const char* filename);
-
-static std::string GetFilePathExtension(const std::string& FileName) {
-    if (FileName.find_last_of(".") != std::string::npos)
-        return FileName.substr(FileName.find_last_of(".") + 1);
-    return "";
-}
+//bool loadModel(GLModel& model, const char* filename);
+//
+//static std::string GetFilePathExtension(const std::string& FileName) {
+//    if (FileName.find_last_of(".") != std::string::npos)
+//        return FileName.substr(FileName.find_last_of(".") + 1);
+//    return "";
+//}

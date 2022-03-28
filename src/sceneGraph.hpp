@@ -17,7 +17,7 @@
 #include <stdlib.h>
 
 //#include "mesh.h"
-//#include <tiny_gltf.h>
+//#include "GLModel.hpp"
 
 enum SceneNodeType {
 	GEOMETRY, INCTANCED_GEOMETRY, GLTF_GEOMETRY, TEXTURED_GEOMETRY, OVERLAY, SPRITE, POINT_LIGHT, SPOT_LIGHT
@@ -94,16 +94,9 @@ struct SceneNode {
 	// Node type is used to determine how to handle the contents of a node
 	SceneNodeType nodeType;
 
-	tinygltf::Model model;
+	//tinygltf::Model model;
+	//GLModel model;
 };
-
-
-//struct LightNode: SceneNode {
-//	LightNode() {
-//		nodeType = POINT_LIGHT;
-//	}
-//	
-//};
 
 SceneNode* createSceneNode();
 void addChild(SceneNode* parent, SceneNode* child);

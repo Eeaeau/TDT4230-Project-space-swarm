@@ -1,3 +1,6 @@
+#include "gamelogic.h"
+
+
 #include <chrono>
 #include <GLFW/glfw3.h>
 #include <glad/glad.h>
@@ -11,7 +14,10 @@
 #define TINYGLTF_IMPLEMENTATION
 #define STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_WRITE_IMPLEMENTATION
-// #define TINYGLTF_NOEXCEPTION // optional. disable exception handling.
+//#define STBI_MSC_SECURE_CRT
+//#define TINYGLTF_NOEXCEPTION // optional. disable exception handling.
+//#define JSON_NOEXCEPTION
+
 #include <utilities/mesh.h>
 
 #include <utilities/shapes.h>
@@ -20,8 +26,9 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <fmt/format.h>
-#include "gamelogic.h"
+
 #include "sceneGraph.hpp"
+
 #define GLM_ENABLE_EXPERIMENTAL
 
 #include <glm/gtx/transform.hpp>
@@ -30,6 +37,8 @@
 #include "utilities/glfont.h"
 
 #include <fstream>
+
+#include "GLModel.hpp"
 
 enum KeyFrameAction {
     BOTTOM, TOP
@@ -437,14 +446,14 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     gltfNode->vertexArrayObjectID = teapot.bindModel();
     gltfNode->position = boxCenter;
     gltfNode->nodeType = GLTF_GEOMETRY;
-    gltfNode->model = teapot;
+    //gltfNode->model = teapot;
     
     rootNode->children.push_back(gltfNode);
 
 
     ballNode->vertexArrayObjectID = teapot.bindModel();
     ballNode->nodeType = GLTF_GEOMETRY;
-    ballNode->model = teapot;
+    //ballNode->model = teapot;
 
     std::cout << fmt::format("Initialized scene with {} SceneNodes.", totalChildren(rootNode)) << std::endl;
 
@@ -774,7 +783,7 @@ void renderNode(SceneNode* node) {
             if (node->vertexArrayObjectID != -1) {
                 //drawModel(node->vertexArrayObjectID, node->model);
 
-                node->model.drawModel(node->vertexArrayObjectID);;
+                //node->model.drawModel(node->vertexArrayObjectID);;
             }
             break;
         

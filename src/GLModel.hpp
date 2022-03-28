@@ -5,8 +5,6 @@
 //#include <vector>
 #include <iostream>
 
-
-
 #include "tiny_gltf.h"
 
 #define BUFFER_OFFSET(i) ((char *)NULL + (i))

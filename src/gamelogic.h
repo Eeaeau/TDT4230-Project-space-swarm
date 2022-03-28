@@ -1,6 +1,7 @@
 #pragma once
 
 #include <utilities/window.hpp>
+
 #include "sceneGraph.hpp"
 #include <stdio.h>
 #include <stdlib.h>
