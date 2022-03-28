@@ -146,6 +146,34 @@ void scrollCallback(GLFWwindow* window, double x, double y) {
     cameraHeight = glm::clamp(cameraHeight, minCameraHeight, maxCameraHeight);
 }
 
+static std::string GetFilePathExtension(const std::string& FileName) {
+    if (FileName.find_last_of(".") != std::string::npos)
+        return FileName.substr(FileName.find_last_of(".") + 1);
+    return "";
+}
+
+bool loadModel(GLModel& model, const char* filename) {
+    tinygltf::TinyGLTF loader;
+    std::string err;
+    std::string warn;
+
+    bool res = loader.LoadASCIIFromFile(&(model), &err, &warn, filename);
+    if (!warn.empty()) {
+        std::cout << "WARN: " << warn << std::endl;
+    }
+
+    if (!err.empty()) {
+        std::cout << "ERR: " << err << std::endl;
+    }
+
+    if (!res)
+        std::cout << "Failed to load glTF: " << filename << std::endl;
+    else
+        std::cout << "Loaded glTF: " << filename << std::endl;
+
+    return res;
+}
+
 
 //// A few lines to help you if you've never used c++ structs
 //struct LightSource {
@@ -165,7 +193,8 @@ void scrollCallback(GLFWwindow* window, double x, double y) {
 std::vector<SceneNode*> lightSources;
 int NumLightProcessed = 0;
 
-tinygltf::Model modelFromglTF;
+//tinygltf::Model modelFromglTF;
+GLModel teapot;
 
 unsigned int amount = 1000;
 glm::mat4* instanceMatrix = new glm::mat4[amount];
@@ -399,21 +428,23 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
 
     bool ret = false;
 
-    //loadModel(modelFromglTF, input_filename.c_str());
-    if (!loadModel(modelFromglTF, input_filename.c_str())) return;
+    tinygltf::Model teapotModel;
 
-
-    gltfNode->vertexArrayObjectID = bindModel(modelFromglTF);
+    //teapot.model = teapotModel;
+    if (!loadModel(teapot, input_filename.c_str())) return;
+    
+    
+    gltfNode->vertexArrayObjectID = teapot.bindModel();
     gltfNode->position = boxCenter;
     gltfNode->nodeType = GLTF_GEOMETRY;
-    gltfNode->model = modelFromglTF;
+    gltfNode->model = teapot;
     
     rootNode->children.push_back(gltfNode);
 
 
-    ballNode->vertexArrayObjectID = bindModel(modelFromglTF);;
+    ballNode->vertexArrayObjectID = teapot.bindModel();
     ballNode->nodeType = GLTF_GEOMETRY;
-    ballNode->model = modelFromglTF;
+    ballNode->model = teapot;
 
     std::cout << fmt::format("Initialized scene with {} SceneNodes.", totalChildren(rootNode)) << std::endl;
 
@@ -742,7 +773,8 @@ void renderNode(SceneNode* node) {
             shader->activate();
             if (node->vertexArrayObjectID != -1) {
                 //drawModel(node->vertexArrayObjectID, node->model);
-                drawModel(node->vertexArrayObjectID, node->model);
+
+                node->model.drawModel(node->vertexArrayObjectID);;
             }
             break;
         
