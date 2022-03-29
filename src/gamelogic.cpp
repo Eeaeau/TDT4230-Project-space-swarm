@@ -596,8 +596,11 @@ void updateFrame(GLFWwindow* window) {
     // ------------------------------------ Camera position ------------------------------------ //
 
     float speed = 100.0;
-    float speedModifier = 2.0;
-    auto cameraFaceDirection = glm::vec3(0.0, -2.0, -1.0);
+    float speedModifier = 3.0;
+
+    float cameraFaceDirectionFactor = glm::abs((cameraHeight - minCameraHeight)/(maxCameraHeight - minCameraHeight))+0.5;
+
+    auto cameraFaceDirection = glm::vec3(0.0, -2.0* cameraFaceDirectionFactor, -1.0);
     auto cameraPlaneDirection = glm::vec3(0.0, 0.0, -1.0);
     auto rightDirection = glm::vec3(1.0, 0.0, 0.0);
 

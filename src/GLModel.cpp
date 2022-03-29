@@ -105,6 +105,7 @@ std::map<int, GLuint> GLModel::bindMesh(std::map<int, GLuint> vbos,
                 glVertexAttribPointer(vaa, size, accessor.componentType,
                     accessor.normalized ? GL_TRUE : GL_FALSE,
                     byteStride, BUFFER_OFFSET(accessor.byteOffset));
+                
             }
             else
                 std::cout << "vaa missing: " << attrib.first << std::endl;
@@ -177,21 +178,20 @@ void GLModel::bindModelNodes(std::map<int, GLuint> vbos, tinygltf::Model& model,
             glBufferData(GL_ARRAY_BUFFER, instanceMatrix.size() * sizeof(glm::mat4), instanceMatrix.data(), GL_STATIC_DRAW);
 
             // Can't link to a mat4 so you need to link four vec4s
-            linkAttrib(bufferID, 5, 5, GL_FLOAT, sizeof(glm::mat4), (void*)0);
-            linkAttrib(bufferID, 6, 5, GL_FLOAT, sizeof(glm::mat4), (void*)(1 * sizeof(glm::vec4)));
-            linkAttrib(bufferID, 7, 5, GL_FLOAT, sizeof(glm::mat4), (void*)(1 * sizeof(glm::vec4)));
-            linkAttrib(bufferID, 8, 5, GL_FLOAT, sizeof(glm::mat4), (void*)(1 * sizeof(glm::vec4)));
+            linkAttrib(bufferID, 5, 4, GL_FLOAT, sizeof(glm::mat4), (void*)0);
+            linkAttrib(bufferID, 6, 4, GL_FLOAT, sizeof(glm::mat4), (void*)(1 * sizeof(glm::vec4)));
+            linkAttrib(bufferID, 7, 4, GL_FLOAT, sizeof(glm::mat4), (void*)(1 * sizeof(glm::vec4)));
+            linkAttrib(bufferID, 8, 4, GL_FLOAT, sizeof(glm::mat4), (void*)(1 * sizeof(glm::vec4)));
 
             // Makes it so the transform is only switched when drawing the next instance
-            glVertexAttribDivisor(4, 1);
             glVertexAttribDivisor(5, 1);
             glVertexAttribDivisor(6, 1);
             glVertexAttribDivisor(7, 1);
+            glVertexAttribDivisor(8, 1);
 
             glBindVertexArray(0);
 
         }
-
     }
 
     for (size_t i = 0; i < node.children.size(); i++) {
