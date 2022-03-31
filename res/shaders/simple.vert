@@ -8,7 +8,6 @@ in layout(location = 4) vec3 bitangent_in;
 
 
 uniform mat4 MVP;
-uniform mat4 viewProjectionMatrix;
 uniform mat4 instanceMatrix;
 uniform mat3 normalMatrix;
 uniform mat4 modelViewMatrix;

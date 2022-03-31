@@ -175,25 +175,25 @@ std::vector <glm::mat4> distributeOnDisc(unsigned int amount, float radius, floa
     for (unsigned int i = 0; i < amount; i++)
     {
         glm::mat4 model = glm::mat4(1.0f);
-        // 1. translation: displace along circle with 'radius' in range [-offset, offset]
-        float angle = (float)i / (float)amount * 360.0f;
-        float displacement = (rand() % (int)(2 * offset * 100)) / 100.0f - offset;
-        float x = sin(angle) * radius + displacement;
-        displacement = (rand() % (int)(2 * offset * 100)) / 100.0f - offset;
-        float y = displacement * 0.4f; // keep height of field smaller compared to width of x and z
-        displacement = (rand() % (int)(2 * offset * 100)) / 100.0f - offset;
-        float z = cos(angle) * radius + displacement;
-        model = glm::translate(model, glm::vec3(x, y, z));
+        //// 1. translation: displace along circle with 'radius' in range [-offset, offset]
+        //float angle = (float)i / (float)amount * 360.0f;
+        //float displacement = (rand() % (int)(2 * offset * 100)) / 100.0f - offset;
+        //float x = sin(angle) * radius + displacement;
+        //displacement = (rand() % (int)(2 * offset * 100)) / 100.0f - offset;
+        //float y = displacement * 0.4f; // keep height of field smaller compared to width of x and z
+        //displacement = (rand() % (int)(2 * offset * 100)) / 100.0f - offset;
+        //float z = cos(angle) * radius + displacement;
+        //model = glm::translate(model, glm::vec3(x, y, z));
 
-        // 2. scale: scale between 0.05 and 0.25f
-        float scale = (rand() % 20) / 100.0f + 0.05;
-        model = glm::scale(model, glm::vec3(scale));
+        //// 2. scale: scale between 0.05 and 0.25f
+        //float scale = (rand() % 20) / 100.0f + 0.05;
+        //model = glm::scale(model, glm::vec3(scale));
 
-        // 3. rotation: add random rotation around a (semi)randomly picked rotation axis vector
-        float rotAngle = (rand() % 360);
-        model = glm::rotate(model, rotAngle, glm::vec3(0.4f, 0.6f, 0.8f));
+        //// 3. rotation: add random rotation around a (semi)randomly picked rotation axis vector
+        //float rotAngle = (rand() % 360);
+        //model = glm::rotate(model, rotAngle, glm::vec3(0.4f, 0.6f, 0.8f));
 
-        // 4. now add to list of matrices
+        //// 4. now add to list of matrices
         instanceMatrix[i] = model;
     }
     return instanceMatrix;
@@ -390,13 +390,13 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     //textureAtlasNode->normalTextureID = brickNormalID;
 
     
-    unsigned int amount = 10;
+    unsigned int amount = 4;
     //glm::mat4* instanceMatrix = new glm::mat4[amount];
     
 
     std::srand(glfwGetTime()); // initialize random seed	
-    float radius = 20.0;
-    float offset = 3.0;
+    float radius = 2.0;
+    float offset = 1.0;
 
     auto instanceMatrix = distributeOnDisc(amount, radius, offset);
 
@@ -408,6 +408,7 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     bool ret = false;
 
     GLModel teapot(input_filename.c_str(), amount, instanceMatrix);
+    GLModel teapot2(input_filename.c_str());
 
     //tinygltf::Model teapotModel;
 
@@ -415,16 +416,17 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     //if (!loadModel(teapot, input_filename.c_str())) return;
     
     
-    gltfNode->vertexArrayObjectID = teapot.bindModel();
+    //gltfNode->vertexArrayObjectID = teapot.bindModel();
     gltfNode->position = boxCenter;
-    gltfNode->nodeType = INCTANCED_GEOMETRY;
-    gltfNode->model = teapot;
+    gltfNode->nodeType = GLTF_GEOMETRY;
+    //gltfNode->nodeType = INCTANCED_GEOMETRY;
+    gltfNode->model = teapot2;
     
     rootNode->children.push_back(gltfNode);
 
 
-    ballNode->vertexArrayObjectID = teapot.bindModel();
-    ballNode->nodeType = GLTF_GEOMETRY;
+    //ballNode->vertexArrayObjectID = teapot.bindModel();
+    ballNode->nodeType = INCTANCED_GEOMETRY;
     ballNode->model = teapot;
 
     std::cout << fmt::format("Initialized scene with {} SceneNodes.", totalChildren(rootNode)) << std::endl;
@@ -755,7 +757,7 @@ void renderNode(SceneNode* node) {
                 glUniformMatrix3fv(instancingShader->getUniformFromName("normalMatrix"), 1, GL_FALSE, glm::value_ptr(normalMatrix));
                 glUniformMatrix4fv(instancingShader->getUniformFromName("modelMatrix"), 1, GL_FALSE, glm::value_ptr(node->modelMatrix));
 
-                node->model.drawModel(node->vertexArrayObjectID);
+                node->model.drawModel();
                 /*glBindVertexArray(node->vertexArrayObjectID);
                 glDrawElementsInstanced(GL_TRIANGLES, rock.meshes[i].indices.size(), GL_UNSIGNED_INT, 0, amount
                 );*/
@@ -768,8 +770,7 @@ void renderNode(SceneNode* node) {
             phongShader->activate();
             if (node->vertexArrayObjectID != -1) {
                 //drawModel(node->vertexArrayObjectID, node->model);
-                glUniformMatrix4fv(phongShader->getUniformFromName("viewProjectionMatrix"), 1, GL_FALSE, glm::value_ptr(node->viewProjectionMatrix));
-                node->model.drawModel(node->vertexArrayObjectID);
+                node->model.drawModel();
             }
             break;
         

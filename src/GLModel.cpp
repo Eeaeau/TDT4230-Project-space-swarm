@@ -20,6 +20,8 @@ GLModel::GLModel(const char* filename, unsigned int instancing, std::vector<glm:
     loadModel(filename);
     this->instancing = instancing;
     this->instanceMatrix = instanceMatrix;
+    this->vaos = std::vector<GLuint>(instancing);
+    bindModel();
 }
 
 bool GLModel::loadModel(const char* filename)
@@ -105,7 +107,31 @@ std::map<int, GLuint> GLModel::bindMesh(std::map<int, GLuint> vbos,
                 glVertexAttribPointer(vaa, size, accessor.componentType,
                     accessor.normalized ? GL_TRUE : GL_FALSE,
                     byteStride, BUFFER_OFFSET(accessor.byteOffset));
-                
+
+                if (instancing != 1) {
+
+                    // vertex buffer object
+                    /*GLuint bufferID;
+                    glGenBuffers(1, &bufferID);
+                    glBufferData(GL_ARRAY_BUFFER, instanceMatrix.size() * sizeof(glm::mat4), instanceMatrix.data(), GL_STATIC_DRAW);*/
+                    //GLuint vao;
+                    //glBindVertexArray(attrib.second);
+                    // Can't link to a mat4 so you need to link four vec4s
+                    std::size_t vec4Size = sizeof(glm::mat4);
+                    linkAttrib(5, 4, GL_FLOAT, vec4Size, (void*)0);
+                    linkAttrib(6, 4, GL_FLOAT, vec4Size, (void*)(1 * sizeof(glm::vec4)));
+                    linkAttrib(7, 4, GL_FLOAT, vec4Size, (void*)(1 * sizeof(glm::vec4)));
+                    linkAttrib(8, 4, GL_FLOAT, vec4Size, (void*)(1 * sizeof(glm::vec4)));
+
+                    // Makes it so the transform is only switched when drawing the next instance
+                    glVertexAttribDivisor(5, 1);
+                    glVertexAttribDivisor(6, 1);
+                    glVertexAttribDivisor(7, 1);
+                    glVertexAttribDivisor(8, 1);
+
+                    //glBindVertexArray(0);
+
+                }
             }
             else
                 std::cout << "vaa missing: " << attrib.first << std::endl;
@@ -169,31 +195,6 @@ void GLModel::bindModelNodes(std::map<int, GLuint> vbos, tinygltf::Model& model,
     tinygltf::Node& node) {
     if ((node.mesh >= 0) && (node.mesh < model.meshes.size())) {
         bindMesh(vbos, model, model.meshes[node.mesh]);
-
-        if (instancing != 1) {
-
-            // vertex buffer object
-            /*GLuint bufferID;
-            glGenBuffers(1, &bufferID);
-            glBufferData(GL_ARRAY_BUFFER, instanceMatrix.size() * sizeof(glm::mat4), instanceMatrix.data(), GL_STATIC_DRAW);*/
-            GLuint vao;
-            glBindVertexArray(vao);
-            // Can't link to a mat4 so you need to link four vec4s
-            std::size_t vec4Size = sizeof(glm::mat4);
-            linkAttrib(5, 4, GL_FLOAT, vec4Size, (void*)0);
-            linkAttrib(6, 4, GL_FLOAT, vec4Size, (void*)(1 * sizeof(glm::vec4)));
-            linkAttrib(7, 4, GL_FLOAT, vec4Size, (void*)(1 * sizeof(glm::vec4)));
-            linkAttrib(8, 4, GL_FLOAT, vec4Size, (void*)(1 * sizeof(glm::vec4)));
-
-            // Makes it so the transform is only switched when drawing the next instance
-            glVertexAttribDivisor(5, 1);
-            glVertexAttribDivisor(6, 1);
-            glVertexAttribDivisor(7, 1);
-            glVertexAttribDivisor(8, 1);
-
-            glBindVertexArray(0);
-
-        }
     }
 
     for (size_t i = 0; i < node.children.size(); i++) {
@@ -202,34 +203,34 @@ void GLModel::bindModelNodes(std::map<int, GLuint> vbos, tinygltf::Model& model,
     }
 }
 
-GLuint GLModel::bindModel() {
-    std::map<int, GLuint> vbos;
-    GLuint vao;
-    glGenVertexArrays(1, &vao);
-    glBindVertexArray(vao);
+std::vector<GLuint> GLModel::bindModel() {
+    if (instancing > 1) {
+        // vertex buffer object
+        unsigned int buffer;
+        glGenBuffers(1, &buffer);
+        glBindBuffer(GL_ARRAY_BUFFER, buffer);
+        glBufferData(GL_ARRAY_BUFFER, instancing * sizeof(glm::mat4), &instanceMatrix[0], GL_STATIC_DRAW);
+    }
+    for (size_t i = 0; i < vaos.size(); ++i) {
+        //auto vao = vaos[i];
+        std::map<int, GLuint> vbos;
 
-    const tinygltf::Scene& scene = this->scenes[this->defaultScene];
-    for (size_t i = 0; i < scene.nodes.size(); ++i) {
-        assert((scene.nodes[i] >= 0) && (scene.nodes[i] < this->nodes.size()));
+        glGenVertexArrays(1, &this->vaos[i]);
+        glBindVertexArray(this->vaos[i]);
 
-        if (instancing > 1) {
-            // vertex buffer object
-            unsigned int buffer;
-            glGenBuffers(1, &buffer);
-            glBindBuffer(GL_ARRAY_BUFFER, buffer);
-            glBufferData(GL_ARRAY_BUFFER, instancing * sizeof(glm::mat4), &instanceMatrix[0], GL_STATIC_DRAW);
+        const tinygltf::Scene& scene = this->scenes[this->defaultScene];
+        for (size_t i = 0; i < scene.nodes.size(); ++i) {
+            assert((scene.nodes[i] >= 0) && (scene.nodes[i] < this->nodes.size()));
+            bindModelNodes(vbos, *this, this->nodes[scene.nodes[i]]);
         }
 
-        bindModelNodes(vbos, *this, this->nodes[scene.nodes[i]]);
+        glBindVertexArray(0);
+        // cleanup vbos
+        for (size_t i = 0; i < vbos.size(); ++i) {
+            glDeleteBuffers(1, &vbos[i]);
+        }
     }
-
-    glBindVertexArray(0);
-    // cleanup vbos
-    for (size_t i = 0; i < vbos.size(); ++i) {
-        glDeleteBuffers(1, &vbos[i]);
-    }
-
-    return vao;
+    return this->vaos;
 }
 
 
@@ -263,14 +264,18 @@ void GLModel::drawModelNodes(tinygltf::Model& model, tinygltf::Node& node) {
     }
 }
 
-void GLModel::drawModel(GLuint vao) {
-    glBindVertexArray(vao);
-    const tinygltf::Scene& scene = this->scenes[this->defaultScene];
-    for (size_t i = 0; i < scene.nodes.size(); ++i) {
-        drawModelNodes(*this, this->nodes[scene.nodes[i]]);
+void GLModel::drawModel() {
+
+    for (size_t i = 0; i < vaos.size(); ++i) {
+        //auto vao = vaos[i];
+        glBindVertexArray(this->vaos[i]);
+        const tinygltf::Scene& scene = this->scenes[this->defaultScene];
+        for (size_t i = 0; i < scene.nodes.size(); ++i) {
+            drawModelNodes(*this, this->nodes[scene.nodes[i]]);
+        }
+
+        glBindVertexArray(0);
     }
-    
-    glBindVertexArray(0);
 }
 
 
