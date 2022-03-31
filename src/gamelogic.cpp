@@ -396,7 +396,7 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
 
     std::srand(glfwGetTime()); // initialize random seed	
     float radius = 20.0;
-    float offset = 2.5f;
+    float offset = 3.0;
 
     auto instanceMatrix = distributeOnDisc(amount, radius, offset);
 
@@ -417,7 +417,7 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     
     gltfNode->vertexArrayObjectID = teapot.bindModel();
     gltfNode->position = boxCenter;
-    gltfNode->nodeType = GLTF_GEOMETRY;
+    gltfNode->nodeType = INCTANCED_GEOMETRY;
     gltfNode->model = teapot;
     
     rootNode->children.push_back(gltfNode);
@@ -717,6 +717,7 @@ void renderNode(SceneNode* node) {
     // Common uniforms for phong shader 
     phongShader->activate();
     glUniformMatrix4fv(phongShader->getUniformFromName("MVP"), 1, GL_FALSE, glm::value_ptr(node->modelViewProjectionMatrix)); // MVP
+    
 
     glUniformMatrix4fv(phongShader->getUniformFromName("modelViewMatrix"), 1, GL_FALSE, glm::value_ptr(node->modelViewMatrix));
 
@@ -748,8 +749,13 @@ void renderNode(SceneNode* node) {
             instancingShader->activate();
             //glUniform1i(phongShader->getUniformFromName("useInstance"), 1);
             if (node->vertexArrayObjectID != -1) {
-                glUniformMatrix4fv(phongShader->getUniformFromName("viewProjectionMatrix"), 1, GL_FALSE, glm::value_ptr(node->modelMatrix));
+                
+                glUniformMatrix4fv(instancingShader->getUniformFromName("MVP"), 1, GL_FALSE, glm::value_ptr(node->modelViewProjectionMatrix)); // MVP
+                glUniformMatrix4fv(instancingShader->getUniformFromName("viewProjectionMatrix"), 1, GL_FALSE, glm::value_ptr(node->viewProjectionMatrix));
+                glUniformMatrix3fv(instancingShader->getUniformFromName("normalMatrix"), 1, GL_FALSE, glm::value_ptr(normalMatrix));
+                glUniformMatrix4fv(instancingShader->getUniformFromName("modelMatrix"), 1, GL_FALSE, glm::value_ptr(node->modelMatrix));
 
+                node->model.drawModel(node->vertexArrayObjectID);
                 /*glBindVertexArray(node->vertexArrayObjectID);
                 glDrawElementsInstanced(GL_TRIANGLES, rock.meshes[i].indices.size(), GL_UNSIGNED_INT, 0, amount
                 );*/
@@ -762,8 +768,8 @@ void renderNode(SceneNode* node) {
             phongShader->activate();
             if (node->vertexArrayObjectID != -1) {
                 //drawModel(node->vertexArrayObjectID, node->model);
-
-                node->model.drawModel(node->vertexArrayObjectID);;
+                glUniformMatrix4fv(phongShader->getUniformFromName("viewProjectionMatrix"), 1, GL_FALSE, glm::value_ptr(node->viewProjectionMatrix));
+                node->model.drawModel(node->vertexArrayObjectID);
             }
             break;
         

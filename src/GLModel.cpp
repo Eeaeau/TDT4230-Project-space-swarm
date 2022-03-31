@@ -8,11 +8,11 @@
 
 
 
-void linkAttrib(GLuint bufferID, GLuint layout, GLuint numComponents, GLenum type, GLsizeiptr stride, void* offset) {
-    glBindBuffer(GL_ARRAY_BUFFER, bufferID);
+void linkAttrib(GLuint layout, GLuint numComponents, GLenum type, GLsizeiptr stride, void* offset) {
+    //glBindBuffer(GL_ARRAY_BUFFER, bufferID);
     glVertexAttribPointer(layout, numComponents, type, GL_FALSE, stride, offset);
     glEnableVertexAttribArray(layout);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    //glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 GLModel::GLModel(const char* filename, unsigned int instancing, std::vector<glm::mat4> instanceMatrix)
@@ -173,15 +173,17 @@ void GLModel::bindModelNodes(std::map<int, GLuint> vbos, tinygltf::Model& model,
         if (instancing != 1) {
 
             // vertex buffer object
-            GLuint bufferID;
+            /*GLuint bufferID;
             glGenBuffers(1, &bufferID);
-            glBufferData(GL_ARRAY_BUFFER, instanceMatrix.size() * sizeof(glm::mat4), instanceMatrix.data(), GL_STATIC_DRAW);
-
+            glBufferData(GL_ARRAY_BUFFER, instanceMatrix.size() * sizeof(glm::mat4), instanceMatrix.data(), GL_STATIC_DRAW);*/
+            GLuint vao;
+            glBindVertexArray(vao);
             // Can't link to a mat4 so you need to link four vec4s
-            linkAttrib(bufferID, 5, 4, GL_FLOAT, sizeof(glm::mat4), (void*)0);
-            linkAttrib(bufferID, 6, 4, GL_FLOAT, sizeof(glm::mat4), (void*)(1 * sizeof(glm::vec4)));
-            linkAttrib(bufferID, 7, 4, GL_FLOAT, sizeof(glm::mat4), (void*)(1 * sizeof(glm::vec4)));
-            linkAttrib(bufferID, 8, 4, GL_FLOAT, sizeof(glm::mat4), (void*)(1 * sizeof(glm::vec4)));
+            std::size_t vec4Size = sizeof(glm::mat4);
+            linkAttrib(5, 4, GL_FLOAT, vec4Size, (void*)0);
+            linkAttrib(6, 4, GL_FLOAT, vec4Size, (void*)(1 * sizeof(glm::vec4)));
+            linkAttrib(7, 4, GL_FLOAT, vec4Size, (void*)(1 * sizeof(glm::vec4)));
+            linkAttrib(8, 4, GL_FLOAT, vec4Size, (void*)(1 * sizeof(glm::vec4)));
 
             // Makes it so the transform is only switched when drawing the next instance
             glVertexAttribDivisor(5, 1);
@@ -209,6 +211,15 @@ GLuint GLModel::bindModel() {
     const tinygltf::Scene& scene = this->scenes[this->defaultScene];
     for (size_t i = 0; i < scene.nodes.size(); ++i) {
         assert((scene.nodes[i] >= 0) && (scene.nodes[i] < this->nodes.size()));
+
+        if (instancing > 1) {
+            // vertex buffer object
+            unsigned int buffer;
+            glGenBuffers(1, &buffer);
+            glBindBuffer(GL_ARRAY_BUFFER, buffer);
+            glBufferData(GL_ARRAY_BUFFER, instancing * sizeof(glm::mat4), &instanceMatrix[0], GL_STATIC_DRAW);
+        }
+
         bindModelNodes(vbos, *this, this->nodes[scene.nodes[i]]);
     }
 
@@ -222,6 +233,7 @@ GLuint GLModel::bindModel() {
 }
 
 
+//void GLModel::drawMesh(tinygltf::Model& model, tinygltf::Mesh& mesh, GLuint &VAO) {
 void GLModel::drawMesh(tinygltf::Model& model, tinygltf::Mesh& mesh) {
     for (size_t i = 0; i < mesh.primitives.size(); ++i) {
         tinygltf::Primitive primitive = mesh.primitives[i];

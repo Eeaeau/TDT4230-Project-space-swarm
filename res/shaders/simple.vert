@@ -14,7 +14,7 @@ uniform mat3 normalMatrix;
 uniform mat4 modelViewMatrix;
 uniform mat4 modelMatrix;
 uniform vec3 viewPos;
-uniform int useInstance;
+//uniform int useInstance;
 
 out layout(location = 0) vec3 normal_out;
 out layout(location = 1) vec2 textureCoordinates_out;
@@ -39,11 +39,11 @@ void main()
 
     textureCoordinates_out = textureCoordinates_in;
 
-    if (useInstance==1) {
-        gl_Position = viewProjectionMatrix * instanceMatrix * vec4(position, 1.0f);
-    } else {
-        gl_Position = MVP * vec4(position, 1.0f);
-    }
+//    if (useInstance==1) {
+//        gl_Position = viewProjectionMatrix * instanceMatrix * vec4(position, 1.0f);
+//    } else {
+//    }
 
+    gl_Position = MVP * vec4(position, 1.0f);
     fragPos = vec3(modelMatrix * vec4(position, 1.0f));
 }

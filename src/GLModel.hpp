@@ -36,6 +36,7 @@ private:
         tinygltf::Node& node);
 
     void drawMesh(tinygltf::Model& model, tinygltf::Mesh& mesh);
+    //void drawMesh(tinygltf::Model& model, tinygltf::Mesh& mesh, GLuint &VAO);
 
     void drawModelNodes(tinygltf::Model& model, tinygltf::Node& node);
 };

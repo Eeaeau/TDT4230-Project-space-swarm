@@ -168,7 +168,7 @@ void main()
 //    result += dither(textureCoordinates);
 
     
-    color = vec4(result, 1.0);
+    color = vec4(normal, 1.0);
 
 //    if (useTexture == 1) {
 //            normal = texture(normalTexture, textureCoordinates).rgb * 2 - 1;
