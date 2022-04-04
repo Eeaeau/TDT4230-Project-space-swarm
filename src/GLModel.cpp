@@ -108,30 +108,6 @@ std::map<int, GLuint> GLModel::bindMesh(std::map<int, GLuint> vbos,
                     accessor.normalized ? GL_TRUE : GL_FALSE,
                     byteStride, BUFFER_OFFSET(accessor.byteOffset));
 
-                if (instancing != 1) {
-
-                    // vertex buffer object
-                    /*GLuint bufferID;
-                    glGenBuffers(1, &bufferID);
-                    glBufferData(GL_ARRAY_BUFFER, instanceMatrix.size() * sizeof(glm::mat4), instanceMatrix.data(), GL_STATIC_DRAW);*/
-                    //GLuint vao;
-                    //glBindVertexArray(attrib.second);
-                    // Can't link to a mat4 so you need to link four vec4s
-                    std::size_t vec4Size = sizeof(glm::mat4);
-                    linkAttrib(5, 4, GL_FLOAT, vec4Size, (void*)0);
-                    linkAttrib(6, 4, GL_FLOAT, vec4Size, (void*)(1 * sizeof(glm::vec4)));
-                    linkAttrib(7, 4, GL_FLOAT, vec4Size, (void*)(1 * sizeof(glm::vec4)));
-                    linkAttrib(8, 4, GL_FLOAT, vec4Size, (void*)(1 * sizeof(glm::vec4)));
-
-                    // Makes it so the transform is only switched when drawing the next instance
-                    glVertexAttribDivisor(5, 1);
-                    glVertexAttribDivisor(6, 1);
-                    glVertexAttribDivisor(7, 1);
-                    glVertexAttribDivisor(8, 1);
-
-                    //glBindVertexArray(0);
-
-                }
             }
             else
                 std::cout << "vaa missing: " << attrib.first << std::endl;
@@ -168,7 +144,7 @@ std::map<int, GLuint> GLModel::bindMesh(std::map<int, GLuint> vbos,
                     format = GL_RGB;
                 }
                 else {
-                    // ???
+                    //format 
                 }
 
                 GLenum type = GL_UNSIGNED_BYTE;
@@ -179,11 +155,21 @@ std::map<int, GLuint> GLModel::bindMesh(std::map<int, GLuint> vbos,
                     type = GL_UNSIGNED_SHORT;
                 }
                 else {
-                    // ???
+                    type = GL_FLOAT;
                 }
 
-                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image.width, image.height, 0,
+                GLint internalFormat = GL_RGBA;
+                if (image.pixel_type == 5126) {
+                    internalFormat = GL_RGBA16F;
+                }
+
+                glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, image.width, image.height, 0,
                     format, type, &image.image.at(0));
+                
+                // Generates MipMaps
+                glGenerateMipmap(GL_TEXTURE_2D);
+
+                glBindTexture(GL_TEXTURE_2D, 0);
             }
         }
     }
@@ -204,19 +190,20 @@ void GLModel::bindModelNodes(std::map<int, GLuint> vbos, tinygltf::Model& model,
 }
 
 std::vector<GLuint> GLModel::bindModel() {
-    if (instancing > 1) {
-        // vertex buffer object
-        unsigned int buffer;
-        glGenBuffers(1, &buffer);
-        glBindBuffer(GL_ARRAY_BUFFER, buffer);
-        glBufferData(GL_ARRAY_BUFFER, instancing * sizeof(glm::mat4), &instanceMatrix[0], GL_STATIC_DRAW);
-    }
-    for (size_t i = 0; i < vaos.size(); ++i) {
+    /*for (size_t i = 0; i < vaos.size(); ++i) {
+    }*/
+        //if (instancing > 1) {
+        //    // vertex buffer object
+        //    unsigned int buffer;
+        //    glGenBuffers(1, &buffer);
+        //    glBindBuffer(GL_ARRAY_BUFFER, buffer);
+        //    glBufferData(GL_ARRAY_BUFFER, instancing * sizeof(glm::mat4), instanceMatrix.data(), GL_STATIC_DRAW);
+        //}
         //auto vao = vaos[i];
         std::map<int, GLuint> vbos;
 
-        glGenVertexArrays(1, &this->vaos[i]);
-        glBindVertexArray(this->vaos[i]);
+        glGenVertexArrays(1, &this->VAO);
+        glBindVertexArray(this->VAO);
 
         const tinygltf::Scene& scene = this->scenes[this->defaultScene];
         for (size_t i = 0; i < scene.nodes.size(); ++i) {
@@ -229,7 +216,6 @@ std::vector<GLuint> GLModel::bindModel() {
         for (size_t i = 0; i < vbos.size(); ++i) {
             glDeleteBuffers(1, &vbos[i]);
         }
-    }
     return this->vaos;
 }
 
@@ -266,16 +252,18 @@ void GLModel::drawModelNodes(tinygltf::Model& model, tinygltf::Node& node) {
 
 void GLModel::drawModel() {
 
-    for (size_t i = 0; i < vaos.size(); ++i) {
-        //auto vao = vaos[i];
-        glBindVertexArray(this->vaos[i]);
-        const tinygltf::Scene& scene = this->scenes[this->defaultScene];
-        for (size_t i = 0; i < scene.nodes.size(); ++i) {
-            drawModelNodes(*this, this->nodes[scene.nodes[i]]);
-        }
-
-        glBindVertexArray(0);
+    //for (size_t i = 0; i < vaos.size(); ++i) {
+    //    //auto vao = vaos[i];
+    //}
+    //GLuint vao = 1;
+    //glBindVertexArray(this->vaos[i]);
+    glBindVertexArray(VAO);
+    const tinygltf::Scene& scene = this->scenes[this->defaultScene];
+    for (size_t i = 0; i < scene.nodes.size(); ++i) {
+        drawModelNodes(*this, this->nodes[scene.nodes[i]]);
     }
+
+    glBindVertexArray(0);
 }
 
 

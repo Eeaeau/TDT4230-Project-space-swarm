@@ -28,9 +28,9 @@ struct Texture {
 
 //in layout(location = 6) uniform Texture texture_in;
 
-layout(binding = 1) uniform sampler2D diffuseTexture; // was not happy using implicit uniform
-layout(binding = 2) uniform sampler2D normalTexture;
-layout(binding = 3) uniform sampler2D roughnessTexture;
+layout(binding = 0) uniform sampler2D diffuseTexture; // was not happy using implicit uniform
+layout(binding = 1) uniform sampler2D normalTexture;
+layout(binding = 2) uniform sampler2D roughnessTexture;
 
 uniform vec3 viewPos;
 uniform vec3 ballPos;
@@ -39,7 +39,8 @@ uniform PointLight pointLights[NR_POINT_LIGHTS];
 uniform mat3 normalMatrix;
 uniform int useTexture;
 
-out vec4 color;
+layout (location = 0) out vec4 FragColor;
+layout (location = 1) out vec4 BrightColor;  
 
 
 float rand(vec2 co) { return fract(sin(dot(co.xy, vec2(12.9898,78.233))) * 43758.5453); }
@@ -168,15 +169,7 @@ void main()
 //    result += dither(textureCoordinates);
 
     
-    color = vec4(normal, 1.0);
+    FragColor = vec4(result, 1.0);
+//    FragColor = texture(diffuseTexture, textureCoordinates);
 
-//    if (useTexture == 1) {
-//            normal = texture(normalTexture, textureCoordinates).rgb * 2 - 1;
-//            diffuseColor = texture(diffuseTexture, textureCoordinates).rgb;
-//            normal = normalize(TBN * normal);
-//            color = vec4(normal, 1.0);
-//    }
-//    color = texture(texture_in.normal, textureCoordinates);
-//    color = vec4(textureCoordinates, 0, 1.0);
-//    color = vec4(textureCoordinates, 0, 1.0);
 }

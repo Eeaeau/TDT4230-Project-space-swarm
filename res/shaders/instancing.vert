@@ -40,7 +40,7 @@ void main()
     textureCoordinates_out = textureCoordinates_in;
 
 //    gl_Position = viewProjectionMatrix * instanceMatrix * vec4(position, 1.0f);
-    gl_Position = MVP * instanceMatrix * vec4(position + vec3(10* mod(gl_InstanceID, 2), 0,10*gl_InstanceID), 1.0f);
+    gl_Position = MVP  * vec4(position + vec3(10* mod(gl_InstanceID, 2), 0, 10*gl_InstanceID), 1.0f);
 
     fragPos = vec3(modelMatrix * vec4(position, 1.0f));
 }

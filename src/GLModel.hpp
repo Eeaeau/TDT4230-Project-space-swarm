@@ -27,8 +27,8 @@ private:
     // Holds number of instances (if 1 the mesh will be rendered normally)
     unsigned int instancing; 
     std::vector<GLuint> vaos;
-    //GLuint VAO;
-    std::vector<glm::mat4> matricesMeshes;
+    GLuint VAO;
+    //std::vector<glm::mat4> matricesMeshes;
     std::vector<glm::mat4> instanceMatrix;
     std::map<int, GLuint> bindMesh(std::map<int, GLuint> vbos,
         tinygltf::Model& model, tinygltf::Mesh& mesh);

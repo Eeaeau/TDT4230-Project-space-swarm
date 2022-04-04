@@ -75,6 +75,6 @@ unsigned int generateTexture(PNGImage &image, bool useAlpha) {
     }*/
 
     //std::free(data);
-
+    glBindTexture(GL_TEXTURE_2D, 0);
     return textureID;
 }

@@ -59,6 +59,7 @@ SceneNode* staticLightNode3;
 SceneNode* animatedLightNode;
 SceneNode* textureAtlasNode;
 SceneNode* textEmptyNode;
+SceneNode* magmaSpare;
 
 double ballRadius = 3.0f;
 
@@ -68,6 +69,7 @@ Gloom::Shader* phongShader;
 Gloom::Shader* overlayShader;
 Gloom::Shader* particleShader;
 Gloom::Shader* instancingShader;
+Gloom::Shader* pbrShader;
 
 sf::Sound* sound;
 
@@ -236,6 +238,9 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
 
     instancingShader = new Gloom::Shader();
     instancingShader->makeBasicShader("../res/shaders/instancing.vert", "../res/shaders/simple.frag");
+    
+    pbrShader = new Gloom::Shader();
+    pbrShader->makeBasicShader("../res/shaders/pbr.vert", "../res/shaders/pbr.frag");
 
     projection = glm::perspective(glm::radians(80.0f), float(windowWidth) / float(windowHeight), nearPlane, farPlane);
 
@@ -262,6 +267,7 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     //create scene nodes
     rootNode = createSceneNode();
     gltfNode = createSceneNode();
+    magmaSpare = createSceneNode();
     boxNode  = createSceneNode();
     testCubeNode = createSceneNode();
     testCubeNode->position = boxCenter;
@@ -337,7 +343,7 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     padNode->VAOIndexCount        = pad.indices.size();
 
     ballNode->vertexArrayObjectID = ballVAO;
-    ballNode->VAOIndexCount       = sphere.indices.size();    
+    ballNode->VAOIndexCount = sphere.indices.size();
     
     ball2Node->vertexArrayObjectID = ball2VAO;
     ball2Node->VAOIndexCount       = sphere.indices.size();
@@ -401,13 +407,14 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     auto instanceMatrix = distributeOnDisc(amount, radius, offset);
 
     
+    //std::string input_filename = "../res/mesh/magma_sphere/magma_sphere.gltf";
     std::string input_filename = "../res/mesh/teapot.gltf";
 
     //bool ret = tinygltf::LoadExternalFile;
 
     bool ret = false;
 
-    GLModel teapot(input_filename.c_str(), amount, instanceMatrix);
+    GLModel teapot(input_filename.c_str());
     GLModel teapot2(input_filename.c_str());
 
     //tinygltf::Model teapotModel;
@@ -422,12 +429,21 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     //gltfNode->nodeType = INCTANCED_GEOMETRY;
     gltfNode->model = teapot2;
     
-    rootNode->children.push_back(gltfNode);
+    //rootNode->children.push_back(gltfNode);
 
 
     //ballNode->vertexArrayObjectID = teapot.bindModel();
-    ballNode->nodeType = INCTANCED_GEOMETRY;
+    ballNode->nodeType = GLTF_GEOMETRY;
     ballNode->model = teapot;
+
+    std::string magmaSparePath = "../res/mesh/magma_sphere/magma_sphere.gltf";
+
+    magmaSpare->model = GLModel(magmaSparePath.c_str());
+    magmaSpare->nodeType = GLTF_GEOMETRY;
+    magmaSpare->position = boxCenter;
+    magmaSpare->scale= glm::vec3(3);
+
+    rootNode->children.push_back(magmaSpare);
 
     std::cout << fmt::format("Initialized scene with {} SceneNodes.", totalChildren(rootNode)) << std::endl;
 
@@ -720,7 +736,6 @@ void renderNode(SceneNode* node) {
     phongShader->activate();
     glUniformMatrix4fv(phongShader->getUniformFromName("MVP"), 1, GL_FALSE, glm::value_ptr(node->modelViewProjectionMatrix)); // MVP
     
-
     glUniformMatrix4fv(phongShader->getUniformFromName("modelViewMatrix"), 1, GL_FALSE, glm::value_ptr(node->modelViewMatrix));
 
     glUniformMatrix4fv(phongShader->getUniformFromName("viewProjectionMatrix"), 1, GL_FALSE, glm::value_ptr(node->viewProjectionMatrix));
@@ -750,37 +765,40 @@ void renderNode(SceneNode* node) {
         case INCTANCED_GEOMETRY:
             instancingShader->activate();
             //glUniform1i(phongShader->getUniformFromName("useInstance"), 1);
-            if (node->vertexArrayObjectID != -1) {
-                
-                glUniformMatrix4fv(instancingShader->getUniformFromName("MVP"), 1, GL_FALSE, glm::value_ptr(node->modelViewProjectionMatrix)); // MVP
-                glUniformMatrix4fv(instancingShader->getUniformFromName("viewProjectionMatrix"), 1, GL_FALSE, glm::value_ptr(node->viewProjectionMatrix));
-                glUniformMatrix3fv(instancingShader->getUniformFromName("normalMatrix"), 1, GL_FALSE, glm::value_ptr(normalMatrix));
-                glUniformMatrix4fv(instancingShader->getUniformFromName("modelMatrix"), 1, GL_FALSE, glm::value_ptr(node->modelMatrix));
+            glUniformMatrix4fv(instancingShader->getUniformFromName("MVP"), 1, GL_FALSE, glm::value_ptr(node->modelViewProjectionMatrix)); // MVP
+            glUniformMatrix4fv(instancingShader->getUniformFromName("viewProjectionMatrix"), 1, GL_FALSE, glm::value_ptr(node->viewProjectionMatrix));
+            glUniformMatrix3fv(instancingShader->getUniformFromName("normalMatrix"), 1, GL_FALSE, glm::value_ptr(normalMatrix));
+            glUniformMatrix4fv(instancingShader->getUniformFromName("modelMatrix"), 1, GL_FALSE, glm::value_ptr(node->modelMatrix));
 
-                node->model.drawModel();
-                /*glBindVertexArray(node->vertexArrayObjectID);
-                glDrawElementsInstanced(GL_TRIANGLES, rock.meshes[i].indices.size(), GL_UNSIGNED_INT, 0, amount
-                );*/
+            node->model.drawModel();
+            //if (node->vertexArrayObjectID != -1) {
+            //    
+            //    /*glBindVertexArray(node->vertexArrayObjectID);
+            //    glDrawElementsInstanced(GL_TRIANGLES, rock.meshes[i].indices.size(), GL_UNSIGNED_INT, 0, amount
+            //    );*/
 
-                //glBindVertexArray(node->vertexArrayObjectID);
-                //glDrawElements(GL_TRIANGLES, node->VAOIndexCount, GL_UNSIGNED_INT, nullptr);
-            }
-            break;
+            //    //glBindVertexArray(node->vertexArrayObjectID);
+            //    //glDrawElements(GL_TRIANGLES, node->VAOIndexCount, GL_UNSIGNED_INT, nullptr);
+            //}
+            //break;
         case GLTF_GEOMETRY:
-            phongShader->activate();
-            if (node->vertexArrayObjectID != -1) {
+            pbrShader->activate();
+            glUniformMatrix4fv(pbrShader->getUniformFromName("MVP"), 1, GL_FALSE, glm::value_ptr(node->modelViewProjectionMatrix)); // MVP
+            //phongShader->activate();
+            //glUniform1i(phongShader->getUniformFromName("useTexture"), 1);
+            //if (node->vertexArrayObjectID != -1) {
+            //}
                 //drawModel(node->vertexArrayObjectID, node->model);
-                node->model.drawModel();
-            }
+            node->model.drawModel();
             break;
         
         case TEXTURED_GEOMETRY:
             phongShader->activate();
 
             glUniform1i(phongShader->getUniformFromName("useTexture"), 1);
-            glBindTextureUnit(1, node->diffuseTextureID);
-            glBindTextureUnit(2, node->normalTextureID);
-            glBindTextureUnit(3, node->roughnessTextureID);
+            glBindTextureUnit(0, node->diffuseTextureID);
+            glBindTextureUnit(1, node->normalTextureID);
+            glBindTextureUnit(2, node->roughnessTextureID);
             
         /*    glBindTextureUnit(phongShader->getUniformFromName("texture_in.diffuse"), node->diffuseTextureID);
             glBindTextureUnit(phongShader->getUniformFromName("texture_in.normal"), node->normalTextureID);*/

@@ -53,7 +53,7 @@ namespace Gloom
             // Create shader object
             const char * source = src.c_str();
             auto shader = create(filename);
-            glShaderSource(shader, 1, &source, nullptr);
+            glShaderSource(shader, 1, &source, NULL);
             glCompileShader(shader);
 
             // Display errors
