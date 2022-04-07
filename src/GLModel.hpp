@@ -7,6 +7,7 @@
 #include <iostream>
 
 #include "tiny_gltf.h"
+#include <glm/gtc/type_ptr.hpp>
 
 #define BUFFER_OFFSET(i) ((char *)NULL + (i))
 
@@ -28,6 +29,10 @@ private:
     unsigned int instancing; 
     std::vector<GLuint> vaos;
     GLuint VAO;
+    std::map<int, GLuint> VBOs;
+
+    std::map<int, GLuint> textureIDs;
+
     //std::vector<glm::mat4> matricesMeshes;
     std::vector<glm::mat4> instanceMatrix;
     std::map<int, GLuint> bindMesh(std::map<int, GLuint> vbos,

@@ -39,9 +39,7 @@ uniform PointLight pointLights[NR_POINT_LIGHTS];
 uniform mat3 normalMatrix;
 uniform int useTexture;
 
-layout (location = 0) out vec4 FragColor;
-layout (location = 1) out vec4 BrightColor;  
-
+layout (location = 0) out vec4 FragColor;  
 
 float rand(vec2 co) { return fract(sin(dot(co.xy, vec2(12.9898,78.233))) * 43758.5453); }
 float dither(vec2 uv) { return (rand(uv)*2.0-1.0) / 256.0; }

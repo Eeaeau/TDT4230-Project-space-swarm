@@ -116,61 +116,69 @@ std::map<int, GLuint> GLModel::bindMesh(std::map<int, GLuint> vbos,
 
         if (model.textures.size() > 0) {
             // fixme: Use material's baseColor
-            tinygltf::Texture& tex = model.textures[0];
 
-            if (tex.source > -1) {
+            //for (auto& tex : model.textures) {
+            for (size_t i = 0; i < model.textures.size(); ++i) {
 
-                GLuint texid;
-                glGenTextures(1, &texid);
+                auto tex = model.textures[i];
 
-                tinygltf::Image& image = model.images[tex.source];
+                if (tex.source > -1) {
 
-                glBindTexture(GL_TEXTURE_2D, texid);
-                glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-                glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-                glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+                    //auto texid = &textureIDs[tex.source];
+                    auto texid = &textureIDs[i];
+                    glGenTextures(1, texid);
 
-                GLenum format = GL_RGBA;
+                    tinygltf::Image& image = model.images[tex.source];
 
-                if (image.component == 1) {
-                    format = GL_RED;
-                }
-                else if (image.component == 2) {
-                    format = GL_RG;
-                }
-                else if (image.component == 3) {
-                    format = GL_RGB;
-                }
-                else {
-                    //format 
-                }
+                    glBindTexture(GL_TEXTURE_2D, *texid);
+                    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+                    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+                    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
-                GLenum type = GL_UNSIGNED_BYTE;
-                if (image.bits == 8) {
-                    // ok
-                }
-                else if (image.bits == 16) {
-                    type = GL_UNSIGNED_SHORT;
-                }
-                else {
-                    type = GL_FLOAT;
-                }
+                    GLenum format = GL_RGBA;
 
-                GLint internalFormat = GL_RGBA;
-                if (image.pixel_type == 5126) {
-                    internalFormat = GL_RGBA16F;
-                }
+                    if (image.component == 1) {
+                        format = GL_RED;
+                    }
+                    else if (image.component == 2) {
+                        format = GL_RG;
+                    }
+                    else if (image.component == 3) {
+                        format = GL_RGB;
+                    }
+                    else {
+                        //format 
+                    }
 
-                glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, image.width, image.height, 0,
-                    format, type, &image.image.at(0));
+                    GLenum type = GL_UNSIGNED_BYTE;
+                    if (image.bits == 8) {
+                        // ok
+                    }
+                    else if (image.bits == 16) {
+                        type = GL_UNSIGNED_SHORT;
+                    }
+                    else {
+                        type = GL_FLOAT;
+                    }
+
+                    GLint internalFormat = GL_RGBA;
+                    if (image.pixel_type == 5126) {
+                        internalFormat = GL_RGBA16F;
+                    }
+
+                    glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, image.width, image.height, 0,
+                        format, type, &image.image.at(0));
                 
-                // Generates MipMaps
-                glGenerateMipmap(GL_TEXTURE_2D);
+                    // Generates MipMaps
+                    glGenerateMipmap(GL_TEXTURE_2D);
 
-                glBindTexture(GL_TEXTURE_2D, 0);
+                    glBindTexture(GL_TEXTURE_2D, 0);
+                }
             }
+            //tinygltf::Texture& tex = model.textures[0];
+
         }
     }
 
@@ -200,7 +208,7 @@ std::vector<GLuint> GLModel::bindModel() {
         //    glBufferData(GL_ARRAY_BUFFER, instancing * sizeof(glm::mat4), instanceMatrix.data(), GL_STATIC_DRAW);
         //}
         //auto vao = vaos[i];
-        std::map<int, GLuint> vbos;
+        
 
         glGenVertexArrays(1, &this->VAO);
         glBindVertexArray(this->VAO);
@@ -208,13 +216,13 @@ std::vector<GLuint> GLModel::bindModel() {
         const tinygltf::Scene& scene = this->scenes[this->defaultScene];
         for (size_t i = 0; i < scene.nodes.size(); ++i) {
             assert((scene.nodes[i] >= 0) && (scene.nodes[i] < this->nodes.size()));
-            bindModelNodes(vbos, *this, this->nodes[scene.nodes[i]]);
+            bindModelNodes(VBOs, *this, this->nodes[scene.nodes[i]]);
         }
 
         glBindVertexArray(0);
         // cleanup vbos
-        for (size_t i = 0; i < vbos.size(); ++i) {
-            glDeleteBuffers(1, &vbos[i]);
+        for (size_t i = 0; i < VBOs.size(); ++i) {
+            glDeleteBuffers(1, &VBOs[i]);
         }
     return this->vaos;
 }
@@ -225,6 +233,28 @@ void GLModel::drawMesh(tinygltf::Model& model, tinygltf::Mesh& mesh) {
     for (size_t i = 0; i < mesh.primitives.size(); ++i) {
         tinygltf::Primitive primitive = mesh.primitives[i];
         tinygltf::Accessor indexAccessor = model.accessors[primitive.indices];
+
+        auto primitiveMat = &materials[primitive.material];
+        
+        auto baseColor = primitiveMat->pbrMetallicRoughness.baseColorTexture.index;
+        auto normalMap = primitiveMat->normalTexture.index;
+        auto roughnessMap = primitiveMat->pbrMetallicRoughness.metallicRoughnessTexture.index;
+        auto emissiveFactor = primitiveMat->emissiveFactor;
+        
+
+        /*for (unsigned int i = 0; i < textures.size(); i++) {
+
+
+        }*/
+        /*for (unsigned int i = 0; i < materials.size(); i++) {
+
+        }*/
+        glBindTextureUnit(0, textureIDs[baseColor]);
+        glBindTextureUnit(1, textureIDs[normalMap]);
+        glBindTextureUnit(2, textureIDs[roughnessMap]);
+        //emissiveFactor
+        //glUniform3fv(3, 1, glm::value_ptr(glm::vec3());
+        glUniform3f(3, static_cast<GLfloat>(emissiveFactor[0]), static_cast<GLfloat>(emissiveFactor[1]), static_cast<GLfloat>(emissiveFactor[2]));
 
         if (instancing == 1)
         {
