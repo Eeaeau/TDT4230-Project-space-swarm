@@ -63,6 +63,7 @@ SceneNode* magmaSpare;
 
 // Create Frame Buffer Object
 unsigned int postProcessingFBO;
+unsigned int bloomFBO;
 
 unsigned int postProcessingTexture;
 unsigned int bloomTexture;
@@ -77,6 +78,7 @@ Gloom::Shader* particleShader;
 Gloom::Shader* instancingShader;
 Gloom::Shader* pbrShader;
 Gloom::Shader* framebufferShader;
+Gloom::Shader* blurShader;
 
 sf::Sound* sound;
 
@@ -255,6 +257,9 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     
     framebufferShader = new Gloom::Shader();
     framebufferShader->makeBasicShader("../res/shaders/framebuffer.vert", "../res/shaders/framebuffer.frag");
+    
+    blurShader = new Gloom::Shader();
+    blurShader->makeBasicShader("../res/shaders/framebuffer.vert", "../res/shaders/blur.frag");
 
     projection = glm::perspective(glm::radians(80.0f), float(windowWidth) / float(windowHeight), nearPlane, farPlane);
 
@@ -273,57 +278,71 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
 
     auto gamma = 2.0f;
 
-    //framebufferShader->activate();
-    //glUniform1i(framebufferShader->getUniformFromName("screenTexture"), 0);
-    //glUniform1i(framebufferShader->getUniformFromName("bloomTexture"), 1);
-    //glUniform1f(framebufferShader->getUniformFromName("gamma"), gamma);
+    framebufferShader->activate();
+    glUniform1i(framebufferShader->getUniformFromName("screenTexture"), 0);
+    glUniform1i(framebufferShader->getUniformFromName("bloomTexture"), 1);
+    glUniform1f(framebufferShader->getUniformFromName("gamma"), gamma);
+    blurShader->activate();
+    glUniform1i(framebufferShader->getUniformFromName("screenTexture"), 0);
 
-    //// Prepare framebuffer rectangle VBO and VAO
-    //
-    //glGenVertexArrays(1, &rectVAO);
-    //glGenBuffers(1, &rectVBO);
-    //glBindVertexArray(rectVAO);
-    //glBindBuffer(GL_ARRAY_BUFFER, rectVBO);
-    //glBufferData(GL_ARRAY_BUFFER, sizeof(rectangleVertices), &rectangleVertices, GL_STATIC_DRAW);
-    //glEnableVertexAttribArray(0);
-    //glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
-    //glEnableVertexAttribArray(1);
-    //glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+    // Enables the Depth Buffer
+    glEnable(GL_DEPTH_TEST);
+
+    // Prepare framebuffer rectangle VBO and VAO
+    glGenVertexArrays(1, &rectVAO);
+    glGenBuffers(1, &rectVBO);
+    glBindVertexArray(rectVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, rectVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(rectangleVertices), &rectangleVertices, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
 
 
     // Create Frame Buffer Object
     glGenFramebuffers(1, &postProcessingFBO);
     glBindFramebuffer(GL_FRAMEBUFFER, postProcessingFBO);
 
+    glGenTextures(1, &postProcessingTexture);
     glBindTexture(GL_TEXTURE_2D, postProcessingTexture);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, windowWidth, windowHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    //glGenerateMipmap(GL_TEXTURE_2D);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, postProcessingTexture, 0);
 
+    // Error checking framebuffer
+    auto fboStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    if (fboStatus != GL_FRAMEBUFFER_COMPLETE)
+        std::cout << "1 Post-Processing Framebuffer error: " << fboStatus << std::endl;
 
-    //// Create Second Framebuffer Texture
-    //glGenTextures(1, &bloomTexture);
-    //glBindTexture(GL_TEXTURE_2D, bloomTexture);
-    //glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, windowWidth, windowHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    //glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, bloomTexture, 0);
+    // Create Second Framebuffer Texture
+    glGenFramebuffers(1, &bloomFBO);
+    glBindFramebuffer(GL_FRAMEBUFFER, bloomFBO);
 
-    //// Tell OpenGL we need to draw to both attachments
-    //unsigned int attachments[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
-    //glDrawBuffers(2, attachments);
+    glGenTextures(1, &bloomTexture);
+    glBindTexture(GL_TEXTURE_2D, bloomTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, windowWidth, windowHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    //glGenerateMipmap(GL_TEXTURE_2D);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, bloomTexture, 0);
 
-    //// Error checking framebuffer
-    //auto fboStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-    //if (fboStatus != GL_FRAMEBUFFER_COMPLETE)
-    //    std::cout << "Post-Processing Framebuffer error: " << fboStatus << std::endl;
+    // Tell OpenGL we need to draw to both attachments
+    unsigned int attachments[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+    glDrawBuffers(2, attachments);
 
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    // Error checking framebuffer
+    fboStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    if (fboStatus != GL_FRAMEBUFFER_COMPLETE)
+        std::cout << "2 Post-Processing Framebuffer error: " << fboStatus << std::endl;
+
+    //glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     //----------------------------------------------------------------------------------------------------------//
 
@@ -941,19 +960,18 @@ void renderNode(SceneNode* node) {
 
 void renderFrame(GLFWwindow* window) {
 
-    //// Bind the custom framebuffer
-    //glBindFramebuffer(GL_FRAMEBUFFER, postProcessingFBO);
-    //// Specify the color of the background
-    ////glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-    //// Clean the back buffer and depth buffer
-    //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    //// Enable depth testing since it's disabled when drawing the framebuffer rectangle
-    //glEnable(GL_DEPTH_TEST);
-
-    //pbrShader->activate();
+    // Bind the custom framebuffer
+    glBindFramebuffer(GL_FRAMEBUFFER, postProcessingFBO);
+    // Specify the color of the background
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    // Clean the back buffer and depth buffer
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    // Enable depth testing since it's disabled when drawing the framebuffer rectangle
+    glEnable(GL_DEPTH_TEST);
 
 
-    // ---------------------------------------- //
+    // -------------------- Post process -------------------- //
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     glUniform3fv(phongShader->getUniformFromName("viewPos"), 1, glm::value_ptr(cameraPosition));
     glUniform3fv(overlayShader->getUniformFromName("viewPos"), 1, glm::value_ptr(cameraPosition));
@@ -967,19 +985,34 @@ void renderFrame(GLFWwindow* window) {
     renderNode(rootNode);
     NumLightProcessed = 0; // reset 
 
-    //// Bind the default framebuffer
-    //glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    //// Draw the framebuffer rectangle
-    //framebufferShader->activate();
+    blurShader->activate();
 
-    //glBindVertexArray(rectVAO);
-    //glDisable(GL_DEPTH_TEST); // prevents framebuffer rectangle from being discarded
-    ////glActiveTexture(GL_TEXTURE0);
-    ////glBindTexture(GL_TEXTURE_2D, postProcessingTexture);
-    //glBindTexture(GL_TEXTURE_2D, bloomTexture);
-    ////glActiveTexture(GL_TEXTURE1);
-    ////glBindTexture(GL_TEXTURE_2D, pingpongBuffer[!horizontal]);
-    //glDrawArrays(GL_TRIANGLES, 0, 6);
+    // -------------------- Post process -------------------- //
+
+    glBindFramebuffer(GL_FRAMEBUFFER, bloomFBO);
+
+    glBindTexture(GL_TEXTURE_2D, bloomTexture);
+    //glUniform1i(glGetUniformLocation(blurProgram.ID, "horizontal"), horizontal);
+    // Render the image
+    glBindVertexArray(rectVAO);
+    glDisable(GL_DEPTH_TEST);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
 
 
+    // Bind the default framebuffer
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    // Draw the framebuffer rectangle
+    framebufferShader->activate();
+    glBindVertexArray(rectVAO);
+    glDisable(GL_DEPTH_TEST); // prevents framebuffer rectangle from being discarded
+    glActiveTexture(GL_TEXTURE0);
+    //glBindTexture(GL_TEXTURE_2D, postProcessingTexture);
+    glBindTexture(GL_TEXTURE_2D, postProcessingTexture);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, bloomFBO);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, postProcessingFBO);
+    
 }
