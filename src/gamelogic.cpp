@@ -62,11 +62,15 @@ SceneNode* textEmptyNode;
 SceneNode* magmaSpare;
 
 // Create Frame Buffer Object
-unsigned int postProcessingFBO;
-unsigned int bloomFBO;
+GLuint postProcessingFBO;
 
-unsigned int postProcessingTexture;
-unsigned int bloomTexture;
+GLuint postProcessingTexture;
+GLuint bloomTexture;
+
+GLuint attachments[2];
+
+GLuint bloomFBO;
+GLuint bloomBuffer;
 
 double ballRadius = 3.0f;
 
@@ -93,7 +97,7 @@ float cameraHeight = 10;
 glm::vec3 cameraPosition = glm::vec3(0, cameraHeight, -20);
 glm::mat4 orthoProject;
 
-unsigned int rectVAO, rectVBO;
+GLuint rectVAO, rectVBO;
 
 CommandLineOptions options;
 
@@ -285,8 +289,7 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     blurShader->activate();
     glUniform1i(framebufferShader->getUniformFromName("screenTexture"), 0);
 
-    // Enables the Depth Buffer
-    glEnable(GL_DEPTH_TEST);
+ 
 
     // Prepare framebuffer rectangle VBO and VAO
     glGenVertexArrays(1, &rectVAO);
@@ -307,40 +310,60 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     glGenTextures(1, &postProcessingTexture);
     glBindTexture(GL_TEXTURE_2D, postProcessingTexture);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, windowWidth, windowHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-    //glGenerateMipmap(GL_TEXTURE_2D);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glGenerateMipmap(GL_TEXTURE_2D);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, postProcessingTexture, 0);
 
+    // Create Second Framebuffer Texture
+
+    glGenTextures(1, &bloomTexture);
+    glBindTexture(GL_TEXTURE_2D, bloomTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, windowWidth, windowHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glGenerateMipmap(GL_TEXTURE_2D);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, bloomTexture, 0);
+
+
+
+    // Tell OpenGL we need to draw to both attachments
+    //attachments = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+    attachments[0] = GL_COLOR_ATTACHMENT0;
+    attachments[1] = GL_COLOR_ATTACHMENT1;
+    glDrawBuffers(2, attachments);
+    
     // Error checking framebuffer
     auto fboStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
     if (fboStatus != GL_FRAMEBUFFER_COMPLETE)
         std::cout << "1 Post-Processing Framebuffer error: " << fboStatus << std::endl;
 
-    // Create Second Framebuffer Texture
     glGenFramebuffers(1, &bloomFBO);
-    glBindFramebuffer(GL_FRAMEBUFFER, bloomFBO);
+    glGenTextures(1, &bloomBuffer);
 
-    glGenTextures(1, &bloomTexture);
-    glBindTexture(GL_TEXTURE_2D, bloomTexture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, windowWidth, windowHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-    //glGenerateMipmap(GL_TEXTURE_2D);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glBindFramebuffer(GL_FRAMEBUFFER, bloomFBO);
+    glBindTexture(GL_TEXTURE_2D, bloomBuffer);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, windowWidth, windowHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glGenerateMipmap(GL_TEXTURE_2D);
+
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, bloomTexture, 0);
-
-    // Tell OpenGL we need to draw to both attachments
-    unsigned int attachments[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
-    glDrawBuffers(2, attachments);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, bloomBuffer, 0);
 
     // Error checking framebuffer
     fboStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
     if (fboStatus != GL_FRAMEBUFFER_COMPLETE)
         std::cout << "2 Post-Processing Framebuffer error: " << fboStatus << std::endl;
+
 
     //glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -832,7 +855,6 @@ void renderNode(SceneNode* node) {
 
     auto screenPos = glm::vec3(node->modelMatrix * glm::vec4(0.0, 0.0, 0.0, 1.0));
 
-    
     // Common uniforms for phong shader 
     phongShader->activate();
     glUniformMatrix4fv(phongShader->getUniformFromName("MVP"), 1, GL_FALSE, glm::value_ptr(node->modelViewProjectionMatrix)); // MVP
@@ -863,6 +885,18 @@ void renderNode(SceneNode* node) {
                 glDrawElements(GL_TRIANGLES, node->VAOIndexCount, GL_UNSIGNED_INT, nullptr);
             }
             break;
+
+        case GLTF_GEOMETRY:
+            pbrShader->activate();
+            //phongShader->activate();
+            glUniformMatrix4fv(pbrShader->getUniformFromName("MVP"), 1, GL_FALSE, glm::value_ptr(node->modelViewProjectionMatrix)); // MVP
+            //glUniform1i(phongShader->getUniformFromName("useTexture"), 1);
+            //if (node->vertexArrayObjectID != -1) {
+            //}
+                //drawModel(node->vertexArrayObjectID, node->model);
+            node->model.drawModel();
+            break;
+
         case INCTANCED_GEOMETRY:
             instancingShader->activate();
             //glUniform1i(phongShader->getUniformFromName("useInstance"), 1);
@@ -882,16 +916,7 @@ void renderNode(SceneNode* node) {
             //    //glDrawElements(GL_TRIANGLES, node->VAOIndexCount, GL_UNSIGNED_INT, nullptr);
             //}
             //break;
-        case GLTF_GEOMETRY:
-            pbrShader->activate();
-            //phongShader->activate();
-            glUniformMatrix4fv(pbrShader->getUniformFromName("MVP"), 1, GL_FALSE, glm::value_ptr(node->modelViewProjectionMatrix)); // MVP
-            //glUniform1i(phongShader->getUniformFromName("useTexture"), 1);
-            //if (node->vertexArrayObjectID != -1) {
-            //}
-                //drawModel(node->vertexArrayObjectID, node->model);
-            node->model.drawModel();
-            break;
+        
         
         case TEXTURED_GEOMETRY:
             phongShader->activate();
@@ -951,6 +976,7 @@ void renderNode(SceneNode* node) {
             NumLightProcessed++;
             break;
         case SPOT_LIGHT: break;
+        default: break;
     }
 
     for(SceneNode* child : node->children) {
@@ -960,6 +986,8 @@ void renderNode(SceneNode* node) {
 
 void renderFrame(GLFWwindow* window) {
 
+    // -------------------- Initiate post process -------------------- //
+    // 
     // Bind the custom framebuffer
     glBindFramebuffer(GL_FRAMEBUFFER, postProcessingFBO);
     // Specify the color of the background
@@ -970,34 +998,39 @@ void renderFrame(GLFWwindow* window) {
     glEnable(GL_DEPTH_TEST);
 
 
-    // -------------------- Post process -------------------- //
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    //glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    // 
+    // -------------------- Draw geo-------------------- //
 
-    glUniform3fv(phongShader->getUniformFromName("viewPos"), 1, glm::value_ptr(cameraPosition));
+    overlayShader->activate();
     glUniform3fv(overlayShader->getUniformFromName("viewPos"), 1, glm::value_ptr(cameraPosition));
-    glUniform3fv(phongShader->getUniformFromName("lightTest"), 1, glm::value_ptr(glm::vec3(1, 0, 0)));
 
+    phongShader->activate();
+    glUniform3fv(phongShader->getUniformFromName("viewPos"), 1, glm::value_ptr(cameraPosition));
+    glUniform3fv(phongShader->getUniformFromName("lightTest"), 1, glm::value_ptr(glm::vec3(1, 0, 0)));
     auto ballPos = glm::vec3(ballNode->modelMatrix * glm::vec4(0.0, 0.0, 0.0, 1.0));
     glUniform3fv(phongShader->getUniformFromName("ballPos"), 1, glm::value_ptr(ballPos));
+
     int windowWidth, windowHeight;
     glfwGetWindowSize(window, &windowWidth, &windowHeight);
     glViewport(0, 0, windowWidth, windowHeight);
     renderNode(rootNode);
     NumLightProcessed = 0; // reset 
 
-    blurShader->activate();
 
     // -------------------- Post process -------------------- //
-
+    blurShader->activate();
     glBindFramebuffer(GL_FRAMEBUFFER, bloomFBO);
 
+    // In the first bounc we want to get the data from the bloomTexture
+
     glBindTexture(GL_TEXTURE_2D, bloomTexture);
-    //glUniform1i(glGetUniformLocation(blurProgram.ID, "horizontal"), horizontal);
+    glGenerateMipmap(GL_TEXTURE_2D);
+
     // Render the image
     glBindVertexArray(rectVAO);
     glDisable(GL_DEPTH_TEST);
     glDrawArrays(GL_TRIANGLES, 0, 6);
-
 
     // Bind the default framebuffer
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -1007,12 +1040,11 @@ void renderFrame(GLFWwindow* window) {
     glBindVertexArray(rectVAO);
     glDisable(GL_DEPTH_TEST); // prevents framebuffer rectangle from being discarded
     glActiveTexture(GL_TEXTURE0);
-    //glBindTexture(GL_TEXTURE_2D, postProcessingTexture);
     glBindTexture(GL_TEXTURE_2D, postProcessingTexture);
+    glGenerateMipmap(GL_TEXTURE_2D);
     glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, bloomFBO);
+    glBindTexture(GL_TEXTURE_2D, bloomBuffer);
+    glGenerateMipmap(GL_TEXTURE_2D);
     glDrawArrays(GL_TRIANGLES, 0, 6);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, postProcessingFBO);
     
 }

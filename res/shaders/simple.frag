@@ -40,6 +40,7 @@ uniform mat3 normalMatrix;
 uniform int useTexture;
 
 layout (location = 0) out vec4 FragColor;  
+layout (location = 1) out vec4 brightColor;  
 
 float rand(vec2 co) { return fract(sin(dot(co.xy, vec2(12.9898,78.233))) * 43758.5453); }
 float dither(vec2 uv) { return (rand(uv)*2.0-1.0) / 256.0; }
@@ -168,6 +169,7 @@ void main()
 
     
     FragColor = vec4(result, 1.0);
+    brightColor = vec4(1-result, 1.0);
 //    FragColor = texture(diffuseTexture, textureCoordinates);
 
 }
