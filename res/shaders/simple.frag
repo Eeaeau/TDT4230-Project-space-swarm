@@ -176,8 +176,9 @@ void main()
     fragColor = vec4(result, 1.0);
 //    brightColor = vec4(1-result, 1.0);
 //    FragColor = texture(diffuseTexture, textureCoordinates);
-    	if (fragBrightness(fragColor) > 0.15f) {
-		brightColor += vec4(fragColor.rgb, 1.0f);
+    brightColor = vec4(vec3(0), 1);
+    if (fragBrightness(fragColor) > 0.4f) {
+		brightColor.rgb += fragColor.rgb;
 	}
 
 }
