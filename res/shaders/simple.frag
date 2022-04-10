@@ -39,7 +39,7 @@ uniform PointLight pointLights[NR_POINT_LIGHTS];
 uniform mat3 normalMatrix;
 uniform int useTexture;
 
-layout (location = 0) out vec4 FragColor;  
+layout (location = 0) out vec4 fragColor;  
 layout (location = 1) out vec4 brightColor;  
 
 float rand(vec2 co) { return fract(sin(dot(co.xy, vec2(12.9898,78.233))) * 43758.5453); }
@@ -141,6 +141,11 @@ vec3 CalcPointLight(PointLight pointLight, vec3 normal, vec3 fragPos, vec3 viewD
 }
 
 
+float fragBrightness(vec4 fragColor) {
+	float average = dot(fragColor.rgb, vec3(0.2126, 0.7152, 0.0722));
+    return average;
+}
+
 void main()
 {
     vec3 normal = normalize(normal_in);
@@ -168,8 +173,11 @@ void main()
 //    result += dither(textureCoordinates);
 
     
-    FragColor = vec4(result, 1.0);
-    brightColor = vec4(1-result, 1.0);
+    fragColor = vec4(result, 1.0);
+//    brightColor = vec4(1-result, 1.0);
 //    FragColor = texture(diffuseTexture, textureCoordinates);
+    	if (fragBrightness(fragColor) > 0.15f) {
+		brightColor += vec4(fragColor.rgb, 1.0f);
+	}
 
 }

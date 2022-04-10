@@ -11,5 +11,6 @@ void main()
 {
     vec3 fragment = texture(screenTexture, texCoords).rgb;
 
-    FragColor.rgb = vec3(1,0,0);
+//    FragColor.rgb = fragment;
+//    FragColor = textureLod(screenTexture, texCoords, 6);
 }

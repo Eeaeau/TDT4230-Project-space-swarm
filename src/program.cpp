@@ -18,13 +18,13 @@
 void runProgram(GLFWwindow* window, CommandLineOptions options)
 {
     // Enable depth (Z) buffer (accept "closest" fragment)
-    glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LESS);
+  /*  glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);*/
 
 
     // Configure miscellaneous OpenGL settings
-    glEnable(GL_CULL_FACE);
-    glCullFace(GL_FRONT);
+    glDisable(GL_CULL_FACE);
+    //glCullFace(GL_FRONT);
     glFrontFace(GL_CCW);
     
     // Enables Multisampling
@@ -39,7 +39,7 @@ void runProgram(GLFWwindow* window, CommandLineOptions options)
 
     // Set default colour after clearing the colour buffer
     //glClearColor(0.3f, 0.5f, 0.8f, 1.0f);
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    //glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
 	initGame(window, options);
 
@@ -47,7 +47,7 @@ void runProgram(GLFWwindow* window, CommandLineOptions options)
     while (!glfwWindowShouldClose(window))
     {
 	    // Clear colour and depth buffers
-	    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	    //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 
         updateFrame(window);

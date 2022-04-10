@@ -287,7 +287,7 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     glUniform1i(framebufferShader->getUniformFromName("bloomTexture"), 1);
     glUniform1f(framebufferShader->getUniformFromName("gamma"), gamma);
     blurShader->activate();
-    glUniform1i(framebufferShader->getUniformFromName("screenTexture"), 0);
+    glUniform1i(blurShader->getUniformFromName("screenTexture"), 1);
 
  
 
@@ -310,8 +310,8 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     glGenTextures(1, &postProcessingTexture);
     glBindTexture(GL_TEXTURE_2D, postProcessingTexture);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, windowWidth, windowHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-    glGenerateMipmap(GL_TEXTURE_2D);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    //glGenerateMipmap(GL_TEXTURE_2D);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -351,9 +351,9 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     glBindFramebuffer(GL_FRAMEBUFFER, bloomFBO);
     glBindTexture(GL_TEXTURE_2D, bloomBuffer);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, windowWidth, windowHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glGenerateMipmap(GL_TEXTURE_2D);
+    //glGenerateMipmap(GL_TEXTURE_2D);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -446,8 +446,8 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     rootNode->children.push_back(ballNode);
     //rootNode->children.push_back(ball2Node);
 
-    rootNode->children.push_back(textureAtlasNode);
-    rootNode->children.push_back(textEmptyNode);
+    //rootNode->children.push_back(textureAtlasNode);
+    //rootNode->children.push_back(textEmptyNode);
     ballNode->children.push_back(ballLightNode);
     rootNode->children.push_back(staticLightNode);
     rootNode->children.push_back(staticLightNode2);
@@ -997,7 +997,6 @@ void renderFrame(GLFWwindow* window) {
     // Enable depth testing since it's disabled when drawing the framebuffer rectangle
     glEnable(GL_DEPTH_TEST);
 
-
     //glBindFramebuffer(GL_FRAMEBUFFER, 0);
     // 
     // -------------------- Draw geo-------------------- //
@@ -1031,6 +1030,7 @@ void renderFrame(GLFWwindow* window) {
     glBindVertexArray(rectVAO);
     glDisable(GL_DEPTH_TEST);
     glDrawArrays(GL_TRIANGLES, 0, 6);
+    glBindVertexArray(0);
 
     // Bind the default framebuffer
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -1041,10 +1041,11 @@ void renderFrame(GLFWwindow* window) {
     glDisable(GL_DEPTH_TEST); // prevents framebuffer rectangle from being discarded
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, postProcessingTexture);
-    glGenerateMipmap(GL_TEXTURE_2D);
+    //glGenerateMipmap(GL_TEXTURE_2D);
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, bloomBuffer);
-    glGenerateMipmap(GL_TEXTURE_2D);
+    //glGenerateMipmap(GL_TEXTURE_2D);
     glDrawArrays(GL_TRIANGLES, 0, 6);
+    glBindVertexArray(0);
     
 }

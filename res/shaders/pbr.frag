@@ -29,9 +29,9 @@ void main() {
 	fragColor = texture(diffuseTexture, texcoord) * vec4((0.3 + 0.7 * lum) * sun_color, 1.0);
 //	color = vec4(emissiveFactor, 1);
 
-	brightColor = vec4(1,0,0,1);
-//	if (fragBrightness(fragColor) > 0.15f) {
-//		brightColor += vec4(fragColor.rgb, 1.0f);
-//	}
+//	brightColor = vec4(1,0,0,1);
+	if (fragBrightness(fragColor) > 0.15f) {
+		brightColor += vec4(fragColor.rgb, 1.0f);
+	}
 
 }
