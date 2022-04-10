@@ -3,6 +3,7 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
+#include <utilities/shader.hpp>
 //#include <vector>
 #include <iostream>
 
@@ -19,12 +20,15 @@ public:
 
     //tinygltf::Model model;
     std::vector<GLuint> bindModel();
-    void drawModel();
+    
+    void drawModel(Gloom::Shader *shader);
     //void drawModel(GLuint vao);
 
 private:
     bool loadModel(const char* filename);
 
+
+    //Gloom::Shader shader;
     // Holds number of instances (if 1 the mesh will be rendered normally)
     unsigned int instancing; 
     std::vector<GLuint> vaos;
@@ -41,9 +45,9 @@ private:
     void bindModelNodes(std::map<int, GLuint> vbos, tinygltf::Model& model,
         tinygltf::Node& node);
 
-    void drawMesh(tinygltf::Model& model, tinygltf::Mesh& mesh);
+    void drawMesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Gloom::Shader* shader);
     //void drawMesh(tinygltf::Model& model, tinygltf::Mesh& mesh, GLuint &VAO);
 
-    void drawModelNodes(tinygltf::Model& model, tinygltf::Node& node);
+    void drawModelNodes(tinygltf::Model& model, tinygltf::Node& node, Gloom::Shader* shader);
 };
 

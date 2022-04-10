@@ -280,7 +280,7 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
         -1.0f,  1.0f,  0.0f, 1.0f
     };
 
-    auto gamma = 2.0f;
+    auto gamma = 1.5f;
 
     framebufferShader->activate();
     glUniform1i(framebufferShader->getUniformFromName("screenTexture"), 0);
@@ -894,7 +894,7 @@ void renderNode(SceneNode* node) {
             //if (node->vertexArrayObjectID != -1) {
             //}
                 //drawModel(node->vertexArrayObjectID, node->model);
-            node->model.drawModel();
+            node->model.drawModel(pbrShader);
             break;
 
         case INCTANCED_GEOMETRY:
@@ -905,7 +905,7 @@ void renderNode(SceneNode* node) {
             glUniformMatrix3fv(instancingShader->getUniformFromName("normalMatrix"), 1, GL_FALSE, glm::value_ptr(normalMatrix));
             glUniformMatrix4fv(instancingShader->getUniformFromName("modelMatrix"), 1, GL_FALSE, glm::value_ptr(node->modelMatrix));
 
-            node->model.drawModel();
+            node->model.drawModel(instancingShader);
             //if (node->vertexArrayObjectID != -1) {
             //    
             //    /*glBindVertexArray(node->vertexArrayObjectID);

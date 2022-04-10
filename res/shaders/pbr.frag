@@ -4,7 +4,9 @@ in vec3 normal;
 in vec3 position;
 in vec2 texcoord;
 
-layout(location = 3) uniform vec3 emissiveFactor;
+//layout(location = 3) in uniform vec3 emissiveFactor;
+uniform vec3 emissiveFactor;
+//uniform float roughnessFactor;
 
 //uniform sampler2D tex;
 layout(binding = 0) uniform sampler2D diffuseTexture;
@@ -34,5 +36,7 @@ void main() {
     if (fragBrightness(fragColor) > 0.4f) {
 		brightColor.rgb += fragColor.rgb;
 	}
+
+	brightColor.rgb *= emissiveFactor;
 
 }

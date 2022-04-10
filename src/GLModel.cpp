@@ -229,7 +229,7 @@ std::vector<GLuint> GLModel::bindModel() {
 
 
 //void GLModel::drawMesh(tinygltf::Model& model, tinygltf::Mesh& mesh, GLuint &VAO) {
-void GLModel::drawMesh(tinygltf::Model& model, tinygltf::Mesh& mesh) {
+void GLModel::drawMesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Gloom::Shader* shader) {
     for (size_t i = 0; i < mesh.primitives.size(); ++i) {
         tinygltf::Primitive primitive = mesh.primitives[i];
         tinygltf::Accessor indexAccessor = model.accessors[primitive.indices];
@@ -238,8 +238,9 @@ void GLModel::drawMesh(tinygltf::Model& model, tinygltf::Mesh& mesh) {
         
         auto baseColor = primitiveMat->pbrMetallicRoughness.baseColorTexture.index;
         auto normalMap = primitiveMat->normalTexture.index;
-        auto roughnessMap = primitiveMat->pbrMetallicRoughness.metallicRoughnessTexture.index;
         auto emissiveFactor = primitiveMat->emissiveFactor;
+        auto roughnessMap = primitiveMat->pbrMetallicRoughness.metallicRoughnessTexture.index;
+        auto roughnessFactor = primitiveMat->pbrMetallicRoughness.roughnessFactor;
         
 
         /*for (unsigned int i = 0; i < textures.size(); i++) {
@@ -252,9 +253,16 @@ void GLModel::drawMesh(tinygltf::Model& model, tinygltf::Mesh& mesh) {
         glBindTextureUnit(0, textureIDs[baseColor]);
         glBindTextureUnit(1, textureIDs[normalMap]);
         glBindTextureUnit(2, textureIDs[roughnessMap]);
+        //glBindTextureUnit(3, textureIDs[roughnessMap]);
         //emissiveFactor
         //glUniform3fv(3, 1, glm::value_ptr(glm::vec3());
-        glUniform3f(3, static_cast<GLfloat>(emissiveFactor[0]), static_cast<GLfloat>(emissiveFactor[1]), static_cast<GLfloat>(emissiveFactor[2]));
+        if (emissiveFactor.empty()) {
+            emissiveFactor = { 0, 0, 0};
+        }
+
+        //glUniform3f(3, static_cast<GLfloat>(emissiveFactor[0]), static_cast<GLfloat>(emissiveFactor[1]), static_cast<GLfloat>(emissiveFactor[2]));
+        glUniform3f(shader->getUniformFromName("emissiveFactor"), static_cast<GLfloat>(emissiveFactor[0]), static_cast<GLfloat>(emissiveFactor[1]), static_cast<GLfloat>(emissiveFactor[2]));
+        glUniform1f(shader->getUniformFromName("roughnessFactor"), roughnessFactor);
 
         if (instancing == 1)
         {
@@ -271,26 +279,28 @@ void GLModel::drawMesh(tinygltf::Model& model, tinygltf::Mesh& mesh) {
 }
 
 // recursively draw node and children nodes of model
-void GLModel::drawModelNodes(tinygltf::Model& model, tinygltf::Node& node) {
+void GLModel::drawModelNodes(tinygltf::Model& model, tinygltf::Node& node, Gloom::Shader* shader) {
     if ((node.mesh >= 0) && (node.mesh < model.meshes.size())) {
-        drawMesh(model, model.meshes[node.mesh]);
+        drawMesh(model, model.meshes[node.mesh], shader);
     }
     for (size_t i = 0; i < node.children.size(); i++) {
-        drawModelNodes(model, model.nodes[node.children[i]]);
+        drawModelNodes(model, model.nodes[node.children[i]], shader);
     }
 }
 
-void GLModel::drawModel() {
+void GLModel::drawModel(Gloom::Shader* shader) {
 
     //for (size_t i = 0; i < vaos.size(); ++i) {
     //    //auto vao = vaos[i];
     //}
     //GLuint vao = 1;
     //glBindVertexArray(this->vaos[i]);
+
+
     glBindVertexArray(VAO);
     const tinygltf::Scene& scene = this->scenes[this->defaultScene];
     for (size_t i = 0; i < scene.nodes.size(); ++i) {
-        drawModelNodes(*this, this->nodes[scene.nodes[i]]);
+        drawModelNodes(*this, this->nodes[scene.nodes[i]], shader);
     }
 
     glBindVertexArray(0);
