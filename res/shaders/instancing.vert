@@ -23,27 +23,27 @@ uniform mat4 modelMatrix;
 //out layout(location = 5) mat3 TBN;
 //out layout(location = 9) vec3 tangent_out;
 
-out vec3 normal_out;
-out vec2 textureCoordinates_out;
+out vec3 normal;
+out vec2 textureCoordinates;
 out vec3 fragPos;
-out vec3 tangent_out;
+out vec3 tangent;
 out mat3 TBN;
 
 void main()
 {
     vec3 bitangent = normalize(normalMatrix * bitangent_in);
 
-    tangent_out = normalize(normalMatrix * tangent_in);
+    tangent = normalize(normalMatrix * tangent_in);
 
-	normal_out = normalize(normalMatrix * normal_in);
+	normal = normalize(normalMatrix * normal_in);
     
     TBN = mat3(
-		 normalize(tangent_in),
+		 normalize(tangent),
 		 normalize(bitangent),
-		 normalize(normal_out) 
+		 normalize(normal) 
 	);
 
-    textureCoordinates_out = textureCoordinates_in;
+    textureCoordinates = textureCoordinates_in;
 
 //    gl_Position = MVP * instanceMatrix * vec4(position, 1.0f);
 //    gl_Position = MVP * vec4(position, 1.0f);

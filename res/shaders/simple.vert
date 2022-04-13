@@ -32,17 +32,17 @@ void main()
 {
     vec3 bitangent = normalize(normalMatrix * bitangent_in);
 
-    tangent_out = normalize( normalMatrix * tangent_in);
+    tangent = normalize( normalMatrix * tangent_in);
 
 	normal = normalize(normalMatrix * normal_in);
     
     TBN = mat3(
-		 normalize(tangent_in),
+		 normalize(tangent),
 		 normalize(bitangent),
-		 normalize(normal_out) 
+		 normalize(normal) 
 	);
 
-    textureCoordinates_out = textureCoordinates_in;
+    textureCoordinates = textureCoordinates_in;
 
 //    if (useInstance==1) {
 //        gl_Position = viewProjectionMatrix * instanceMatrix * vec4(position, 1.0f);
