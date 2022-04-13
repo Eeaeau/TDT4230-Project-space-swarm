@@ -29,9 +29,7 @@ void main() {
 //	float lum = max(dot(normal, normalize(sun_position)), 0.0);
 	float lum = max(dot(texture(normalTexture, texcoord).rgb, normalize(sun_position)), 0.0);
 	fragColor = texture(diffuseTexture, texcoord) * vec4((0.3 + 0.7 * lum) * sun_color, 1.0);
-//	color = vec4(emissiveFactor, 1);
 
-//	brightColor = vec4(1,0,0,1);
 	brightColor vec4(vec3(0), 1);
     if (fragBrightness(fragColor) > 0.4f) {
 		brightColor.rgb += fragColor.rgb;
