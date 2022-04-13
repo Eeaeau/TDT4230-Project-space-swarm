@@ -69,7 +69,7 @@ struct SceneNode {
 
 	// The Model matrix for preserving angles is needed
 	glm::mat4 modelMatrix;
-	glm::mat4* modelMatrices;
+	std::vector<glm::mat4> modelMatrices;
 	glm::mat4 modelViewMatrix;
 
 	// Transforms
@@ -83,6 +83,7 @@ struct SceneNode {
 
 	// The ID of the VAO containing the "appearance" of this SceneNode.
 	int vertexArrayObjectID;
+	std::vector<GLuint> vertexArrayObjectIDs;
 	unsigned int VAOIndexCount;
 	unsigned int diffuseTextureID;
 	unsigned int normalTextureID;

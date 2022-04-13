@@ -37,7 +37,84 @@ unsigned int generateBuffer(Mesh &mesh, unsigned int amount) {
 
 
     return vaoID;
+
 }
+
+//std::vector<GLuint> generateInctancedBuffer(Mesh &mesh, std::vector<glm::mat4> modelMatrices, const GLuint amount) {
+//    std::vector<GLuint> VAOs;
+//    
+//    // vertex buffer object
+//    unsigned int buffer;
+//    glGenBuffers(1, &buffer);
+//    glBindBuffer(GL_ARRAY_BUFFER, buffer);
+//    glBufferData(GL_ARRAY_BUFFER, amount * sizeof(glm::mat4), modelMatrices.data(), GL_STATIC_DRAW);
+//
+//    for (unsigned int i = 0; i < amount; i++)
+//    {
+//        
+//        auto VAO = generateBuffer(mesh);
+//        VAOs.push_back(VAO);
+//
+//        glBindVertexArray(VAO);
+//        // vertex attributes
+//        std::size_t vec4Size = sizeof(glm::vec4);
+//        glEnableVertexAttribArray(3);
+//        glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)0);
+//        glEnableVertexAttribArray(4);
+//        glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(1 * vec4Size));
+//        glEnableVertexAttribArray(5);
+//        glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(2 * vec4Size));
+//        glEnableVertexAttribArray(6);
+//        glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(3 * vec4Size));
+//
+//        glVertexAttribDivisor(3, 1);
+//        glVertexAttribDivisor(4, 1);
+//        glVertexAttribDivisor(5, 1);
+//        glVertexAttribDivisor(6, 1);
+//
+//        glBindVertexArray(0);
+//    }
+//
+//    return VAOs;
+//}
+
+GLuint generateInctancedBuffer(Mesh &mesh, std::vector<glm::mat4> modelMatrices, const GLuint amount) {
+    // vertex buffer object
+    unsigned int buffer;
+    glGenBuffers(1, &buffer);
+    glBindBuffer(GL_ARRAY_BUFFER, buffer);
+    glBufferData(GL_ARRAY_BUFFER, amount * sizeof(glm::mat4), modelMatrices.data(), GL_STATIC_DRAW);
+
+    auto VAO = generateBuffer(mesh);
+
+    //glBindVertexArray(VAO);
+
+    // vertex attributes
+    std::size_t vec4Size = sizeof(glm::vec4);
+    glEnableVertexAttribArray(3);
+    glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)0);
+    glEnableVertexAttribArray(4);
+    glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(1 * vec4Size));
+    glEnableVertexAttribArray(5);
+    glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(2 * vec4Size));
+    glEnableVertexAttribArray(6);
+    glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(3 * vec4Size));
+
+    glVertexAttribDivisor(3, 1);
+    glVertexAttribDivisor(4, 1);
+    glVertexAttribDivisor(5, 1);
+    glVertexAttribDivisor(6, 1);
+
+    glBindVertexArray(0);
+    
+
+    return VAO;
+}
+
+
+
+
+
 
 
 unsigned int generateTexture(PNGImage &image, bool useAlpha) {

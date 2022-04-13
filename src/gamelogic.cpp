@@ -192,6 +192,7 @@ std::vector <glm::mat4> distributeOnDisc(unsigned int amount, float radius, floa
     for (unsigned int i = 0; i < amount; i++)
     {
         glm::mat4 model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(1/10*amount));
         //// 1. translation: displace along circle with 'radius' in range [-offset, offset]
         //float angle = (float)i / (float)amount * 360.0f;
         //float displacement = (rand() % (int)(2 * offset * 100)) / 100.0f - offset;
@@ -280,12 +281,14 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
         -1.0f,  1.0f,  0.0f, 1.0f
     };
 
-    auto gamma = 1.5f;
+    auto gamma = 2.2f;
+    auto exposure = 0.5;
 
     framebufferShader->activate();
     glUniform1i(framebufferShader->getUniformFromName("screenTexture"), 0);
     glUniform1i(framebufferShader->getUniformFromName("bloomTexture"), 1);
     glUniform1f(framebufferShader->getUniformFromName("gamma"), gamma);
+    glUniform1f(framebufferShader->getUniformFromName("exposure"), exposure);
     blurShader->activate();
     glUniform1i(blurShader->getUniformFromName("screenTexture"), 1);
 
@@ -372,9 +375,9 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     // Create meshes
     Mesh pad = cube(padDimensions, glm::vec2(30, 40), true);
     Mesh box = cube(boxDimensions, glm::vec2(90), true, true);
-    Mesh testCube = cube(boxDimensions, glm::vec2(90), false, true);
+    Mesh testCube = cube(glm::vec3(2), glm::vec2(90), false, true);
     Mesh sphere = generateSphere(1.0, 40, 40);
-    Mesh sphere2 = generateSphere(1.0, 40, 40);
+    Mesh sphere2 = generateSphere(5.0, 40, 40);
     Mesh textMesh = generateTextGeometryBuffer("Click to begin!", 39 / 29, 0.5);
     Mesh textEmptyMesh = generateTextGeometryBuffer("               ", 39 / 29, 0.5);
 
@@ -382,7 +385,7 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     unsigned int ballVAO = generateBuffer(sphere);
     unsigned int ball2VAO = generateBuffer(sphere2);
     unsigned int boxVAO  = generateBuffer(box);
-    unsigned int testCubeVAO = generateBuffer(testCube);
+    
     unsigned int padVAO  = generateBuffer(pad);
     unsigned int textVAO = generateBuffer(textMesh);
     unsigned int textEmptyVAO = generateBuffer(textEmptyMesh);
@@ -398,16 +401,13 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     padNode  = createSceneNode();
     ballNode = createSceneNode();
     ball2Node = createSceneNode();
-    ball2Node->position = boxCenter;
+    //ball2Node->position = boxCenter;
     textureAtlasNode = createSceneNode();
     //textureAtlasNode->position = glm::vec3(0, 0, -80);
     textureAtlasNode->position = boxCenter;
 
     textEmptyNode = createSceneNode();
     textEmptyNode->position = boxCenter;
-    
-    //ball2Node->nodeType = INCTANCED_GEOMETRY;
-    //ball2Node->modelMatrices = instanceMatrix;
 
     ballLightNode = createSceneNode();
     ballLightNode->nodeType = POINT_LIGHT;
@@ -444,7 +444,7 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     rootNode->children.push_back(padNode);
 
     rootNode->children.push_back(ballNode);
-    //rootNode->children.push_back(ball2Node);
+    padNode->children.push_back(ball2Node);
 
     //rootNode->children.push_back(textureAtlasNode);
     //rootNode->children.push_back(textEmptyNode);
@@ -469,7 +469,7 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     ballNode->vertexArrayObjectID = ballVAO;
     ballNode->VAOIndexCount = sphere.indices.size();
     
-    ball2Node->vertexArrayObjectID = ball2VAO;
+    //ball2Node->vertexArrayObjectID = ball2VAO;
     ball2Node->VAOIndexCount       = sphere.indices.size();
 
     textureAtlasNode->vertexArrayObjectID = textVAO;
@@ -528,9 +528,21 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     float radius = 2.0;
     float offset = 1.0;
 
+
     auto instanceMatrix = distributeOnDisc(amount, radius, offset);
 
-    
+
+    ball2Node->nodeType = INCTANCED_GEOMETRY;
+    ball2Node->modelMatrices = instanceMatrix;
+    ball2Node->vertexArrayObjectID = generateInctancedBuffer(sphere2, instanceMatrix, amount);
+
+    //testCubeNode->modelMatrices = instanceMatrix;
+    //testCubeNode->vertexArrayObjectID = generateInctancedBuffer(testCube, instanceMatrix, amount);
+    //testCubeNode->VAOIndexCount = testCube.indices.size();
+    //testCubeNode->nodeType = INCTANCED_GEOMETRY;
+
+    //rootNode->children.push_back(testCubeNode);
+
     //std::string input_filename = "../res/mesh/magma_sphere/magma_sphere.gltf";
     std::string input_filename = "../res/mesh/teapot.gltf";
 
@@ -905,8 +917,19 @@ void renderNode(SceneNode* node) {
             glUniformMatrix3fv(instancingShader->getUniformFromName("normalMatrix"), 1, GL_FALSE, glm::value_ptr(normalMatrix));
             glUniformMatrix4fv(instancingShader->getUniformFromName("modelMatrix"), 1, GL_FALSE, glm::value_ptr(node->modelMatrix));
 
-            node->model.drawModel(instancingShader);
-            //if (node->vertexArrayObjectID != -1) {
+            //node->model.drawModel(instancingShader);
+
+            if (node->vertexArrayObjectID != -1) {
+                glBindVertexArray(node->vertexArrayObjectID);
+                glDrawElementsInstanced(
+                    GL_TRIANGLES, node->VAOIndexCount, GL_UNSIGNED_INT, 0, node->modelMatrices.size()
+                );
+                glBindVertexArray(0);
+            }
+            /*for (unsigned int i = 0; i < node->modelMatrices.size(); i++)
+            {
+            }*/
+
             //    
             //    /*glBindVertexArray(node->vertexArrayObjectID);
             //    glDrawElementsInstanced(GL_TRIANGLES, rock.meshes[i].indices.size(), GL_UNSIGNED_INT, 0, amount
@@ -998,7 +1021,7 @@ void renderFrame(GLFWwindow* window) {
     glEnable(GL_DEPTH_TEST);
 
     //glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    // 
+    glCullFace(GL_BACK);
     // -------------------- Draw geo-------------------- //
 
     overlayShader->activate();
@@ -1018,6 +1041,8 @@ void renderFrame(GLFWwindow* window) {
 
 
     // -------------------- Post process -------------------- //
+    glCullFace(GL_FRONT);
+
     blurShader->activate();
     glBindFramebuffer(GL_FRAMEBUFFER, bloomFBO);
 
