@@ -1,10 +1,16 @@
 #version 450 core
 
-in layout(location = 0) vec3 normal_in;
-in layout(location = 1) vec2 textureCoordinates;
-in layout(location = 4) vec3 fragPos;
-in layout(location = 5) mat3 TBN;
-in layout(location = 9) vec3 tangent_in;
+//in layout(location = 0) vec3 normal_in;
+//in layout(location = 1) vec2 textureCoordinates;
+//in layout(location = 4) vec3 fragPos;
+//in layout(location = 5) mat3 TBN;
+//in layout(location = 9) vec3 tangent_in;
+
+in vec3 normal;
+in vec2 textureCoordinates;
+in vec3 fragPos;
+in mat3 TBN;
+in vec3 tangent;
 
 #define NR_POINT_LIGHTS 4
 #define NR_TEXTURES 1
@@ -148,7 +154,7 @@ float fragBrightness(vec4 fragColor) {
 
 void main()
 {
-    vec3 normal = normalize(normal_in);
+    vec3 normal = normalize(normal);
 
     vec3 viewDir = normalize(viewPos - fragPos);
 

@@ -192,7 +192,7 @@ std::vector <glm::mat4> distributeOnDisc(unsigned int amount, float radius, floa
     for (unsigned int i = 0; i < amount; i++)
     {
         glm::mat4 model = glm::mat4(1.0f);
-        model = glm::translate(model, glm::vec3(1/10*amount));
+        model = glm::translate(model, glm::vec3(1/2*amount));
         //// 1. translation: displace along circle with 'radius' in range [-offset, offset]
         //float angle = (float)i / (float)amount * 360.0f;
         //float displacement = (rand() % (int)(2 * offset * 100)) / 100.0f - offset;
@@ -453,6 +453,7 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     rootNode->children.push_back(staticLightNode2);
     rootNode->children.push_back(staticLightNode3);
     //padNode->children.push_back(animatedLightNode);
+    rootNode->children.push_back(testCubeNode);
     
     //ballNode->children.push_back(lightSources[0]);
     //lightSources[0]->position = glm::vec3(0, 0, 2);
@@ -462,6 +463,8 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     // assign VAO
     boxNode->vertexArrayObjectID  = boxVAO;
     boxNode->VAOIndexCount        = box.indices.size();
+
+    testCubeNode->VAOIndexCount = testCube.indices.size();
 
     padNode->vertexArrayObjectID  = padVAO;
     padNode->VAOIndexCount        = pad.indices.size();
@@ -536,12 +539,12 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     ball2Node->modelMatrices = instanceMatrix;
     ball2Node->vertexArrayObjectID = generateInctancedBuffer(sphere2, instanceMatrix, amount);
 
-    //testCubeNode->modelMatrices = instanceMatrix;
-    //testCubeNode->vertexArrayObjectID = generateInctancedBuffer(testCube, instanceMatrix, amount);
-    //testCubeNode->VAOIndexCount = testCube.indices.size();
-    //testCubeNode->nodeType = INCTANCED_GEOMETRY;
+    testCubeNode->nodeType = INCTANCED_GEOMETRY;
+    testCubeNode->modelMatrices = instanceMatrix;
+    testCubeNode->vertexArrayObjectID = generateInctancedBuffer(testCube, instanceMatrix, amount);
+    
 
-    //rootNode->children.push_back(testCubeNode);
+    
 
     //std::string input_filename = "../res/mesh/magma_sphere/magma_sphere.gltf";
     std::string input_filename = "../res/mesh/teapot.gltf";
@@ -918,6 +921,7 @@ void renderNode(SceneNode* node) {
             glUniformMatrix4fv(instancingShader->getUniformFromName("modelMatrix"), 1, GL_FALSE, glm::value_ptr(node->modelMatrix));
 
             //node->model.drawModel(instancingShader);
+            glUniform1i(instancingShader->getUniformFromName("useTexture"), 0);
 
             if (node->vertexArrayObjectID != -1) {
                 glBindVertexArray(node->vertexArrayObjectID);

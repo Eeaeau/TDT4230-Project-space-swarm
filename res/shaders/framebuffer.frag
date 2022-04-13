@@ -11,7 +11,8 @@ uniform float exposure;
 void main()
 {
     vec3 fragment = texture(screenTexture, texCoords).rgb;
-    vec3 bloom = texture(bloomTexture, texCoords).rgb;
+//    vec3 bloom = texture(bloomTexture, texCoords).rgb;
+    vec3 bloom = vec3(0);
 
     vec3 color = fragment + bloom;
 

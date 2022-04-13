@@ -13,21 +13,27 @@ uniform mat4 viewProjectionMatrix;
 uniform mat3 normalMatrix;
 uniform mat4 modelViewMatrix;
 uniform mat4 modelMatrix;
-uniform vec3 viewPos;
-uniform int useInstance;
+//uniform vec3 viewPos;
+//uniform int useInstance;
 
-out layout(location = 0) vec3 normal_out;
-out layout(location = 1) vec2 textureCoordinates_out;
-out layout(location = 4) vec3 fragPos;
-out layout(location = 5) mat3 TBN;
-out layout(location = 9) vec3 tangent_out;
 
+//out layout(location = 0) vec3 normal_out;
+//out layout(location = 1) vec2 textureCoordinates_out;
+//out layout(location = 4) vec3 fragPos;
+//out layout(location = 5) mat3 TBN;
+//out layout(location = 9) vec3 tangent_out;
+
+out vec3 normal_out;
+out vec2 textureCoordinates_out;
+out vec3 fragPos;
+out vec3 tangent_out;
+out mat3 TBN;
 
 void main()
 {
     vec3 bitangent = normalize(normalMatrix * bitangent_in);
 
-    tangent_out = normalize( normalMatrix * tangent_in);
+    tangent_out = normalize(normalMatrix * tangent_in);
 
 	normal_out = normalize(normalMatrix * normal_in);
     
@@ -39,9 +45,9 @@ void main()
 
     textureCoordinates_out = textureCoordinates_in;
 
-    gl_Position = viewProjectionMatrix * instanceMatrix * vec4(position, 1.0f);
+//    gl_Position = MVP * instanceMatrix * vec4(position, 1.0f);
 //    gl_Position = MVP * vec4(position, 1.0f);
-//    gl_Position = MVP  * vec4(position + vec3(10* mod(gl_InstanceID, 2), 0, 10*gl_InstanceID), 1.0f);
+    gl_Position = MVP  * vec4(position + vec3(10* mod(gl_InstanceID, 2), 0, 10*gl_InstanceID), 1.0f);
 
-    fragPos = vec3(modelMatrix * vec4(position, 1.0f));
+    fragPos = vec3(modelMatrix * instanceMatrix * vec4(position, 1.0f));
 }
