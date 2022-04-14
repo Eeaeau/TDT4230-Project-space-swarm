@@ -59,7 +59,7 @@ SceneNode* staticLightNode3;
 SceneNode* animatedLightNode;
 SceneNode* textureAtlasNode;
 SceneNode* textEmptyNode;
-SceneNode* magmaSpare;
+SceneNode* magmaSphere;
 
 // Create Frame Buffer Object
 GLuint postProcessingFBO;
@@ -186,13 +186,30 @@ int NumLightProcessed = 0;
 
 //tinygltf::Model modelFromglTF;
 
+std::vector <glm::vec3> distributeOnGrid(unsigned int amount, int width, float offset) {
+    std::vector <glm::vec3> instancePos(amount);
+    int x, y = 0;
+    for (unsigned int i = 0; i < amount; i++)
+    {
+        if (i % width == 0) {
+            y++;
+        }
+        x = i % width;
+        glm::vec3 pos = glm::vec3(x, 0, y);
+
+        instancePos[i] = offset * pos;
+    }
+    return instancePos;
+}
+
 
 std::vector <glm::mat4> distributeOnDisc(unsigned int amount, float radius, float offset) {
     std::vector <glm::mat4> instanceMatrix(amount);
     for (unsigned int i = 0; i < amount; i++)
     {
-        glm::mat4 model = glm::mat4(1.0f);
-        model = glm::translate(model, glm::vec3(1/2*amount));
+        glm::mat4 model;
+        //model = glm::translate(model, glm::vec3(1, 0, 0));
+        model = model* glm::rotate(glm::vec3(i).x, glm::vec3(1, 0, 0));
         //// 1. translation: displace along circle with 'radius' in range [-offset, offset]
         //float angle = (float)i / (float)amount * 360.0f;
         //float displacement = (rand() % (int)(2 * offset * 100)) / 100.0f - offset;
@@ -375,7 +392,7 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     // Create meshes
     Mesh pad = cube(padDimensions, glm::vec2(30, 40), true);
     Mesh box = cube(boxDimensions, glm::vec2(90), true, true);
-    Mesh testCube = cube(glm::vec3(2), glm::vec2(90), false, true);
+    Mesh testCube = cube(glm::vec3(2), glm::vec2(90));
     Mesh sphere = generateSphere(1.0, 40, 40);
     Mesh sphere2 = generateSphere(5.0, 40, 40);
     Mesh textMesh = generateTextGeometryBuffer("Click to begin!", 39 / 29, 0.5);
@@ -394,10 +411,10 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     //create scene nodes
     rootNode = createSceneNode();
     gltfNode = createSceneNode();
-    magmaSpare = createSceneNode();
+    magmaSphere = createSceneNode();
     boxNode  = createSceneNode();
     testCubeNode = createSceneNode();
-    testCubeNode->position = boxCenter;
+    testCubeNode->position = boxCenter+glm::vec3(0);
     padNode  = createSceneNode();
     ballNode = createSceneNode();
     ball2Node = createSceneNode();
@@ -510,10 +527,6 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     unsigned int roughnessTextureID = generateTexture(boxNode->roughnessTexture, false);
     boxNode->roughnessTextureID = roughnessTextureID;
     
-    
-    //padNode->nodeType = TEXTURED_GEOMETRY;
-    //padNode->diffuseTextureID = brickDiffuseID;
-    //padNode->normalTextureID= brickNormalID;
 
     //auto textAtlas = loadPNGFile("../res/textures/charmap.png");
     //unsigned int textAtlasID = generateTexture(textAtlas, true);
@@ -523,7 +536,7 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     //textureAtlasNode->normalTextureID = brickNormalID;
 
     
-    unsigned int amount = 4;
+    unsigned int amount = 2;
     //glm::mat4* instanceMatrix = new glm::mat4[amount];
     
 
@@ -533,18 +546,15 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
 
 
     auto instanceMatrix = distributeOnDisc(amount, radius, offset);
-
+    auto instancePos = distributeOnGrid(amount, amount/2, 10);
 
     ball2Node->nodeType = INCTANCED_GEOMETRY;
     ball2Node->modelMatrices = instanceMatrix;
-    ball2Node->vertexArrayObjectID = generateInctancedBuffer(sphere2, instanceMatrix, amount);
+    ball2Node->vertexArrayObjectID = generateInctancedBuffer(sphere2, instanceMatrix);
 
     testCubeNode->nodeType = INCTANCED_GEOMETRY;
     testCubeNode->modelMatrices = instanceMatrix;
-    testCubeNode->vertexArrayObjectID = generateInctancedBuffer(testCube, instanceMatrix, amount);
-    
-
-    
+    testCubeNode->vertexArrayObjectID = generateInctancedBuffer(testCube, instanceMatrix);
 
     //std::string input_filename = "../res/mesh/magma_sphere/magma_sphere.gltf";
     std::string input_filename = "../res/mesh/teapot.gltf";
@@ -575,16 +585,18 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     ballNode->nodeType = GLTF_GEOMETRY;
     ballNode->model = teapot;
 
-    std::string magmaSparePath = "../res/mesh/magma_sphere/magma_sphere.gltf";
+    std::string magmaSpherePath = "../res/mesh/magma_sphere/magma_sphere.gltf";
 
-    magmaSpare->model = GLModel(magmaSparePath.c_str());
-    magmaSpare->nodeType = GLTF_GEOMETRY;
-    magmaSpare->position = boxCenter;
-    magmaSpare->scale= glm::vec3(3);
+    magmaSphere->model = GLModel(magmaSpherePath.c_str());
+    magmaSphere->nodeType = GLTF_GEOMETRY;
+    magmaSphere->position = boxCenter;
+    magmaSphere->scale= glm::vec3(3);
 
-    rootNode->children.push_back(magmaSpare);
+    //rootNode->children.push_back(magmaSphere);
 
     std::cout << fmt::format("Initialized scene with {} SceneNodes.", totalChildren(rootNode)) << std::endl;
+
+    std::cout << "GL_MAX_VERTEX_ATTRIBS: " << GL_MAX_VERTEX_ATTRIBS << std::endl;
 
     std::cout << "Ready. Click to start!" << std::endl;
 }
@@ -868,7 +880,7 @@ void updateNodeTransformations(SceneNode* node, glm::mat4 transformationThusFar)
 
 void renderNode(SceneNode* node) {
 
-    auto screenPos = glm::vec3(node->modelMatrix * glm::vec4(0.0, 0.0, 0.0, 1.0));
+    //auto screenPos = glm::vec3(node->modelMatrix * glm::vec4(0.0, 0.0, 0.0, 1.0));
 
     // Common uniforms for phong shader 
     phongShader->activate();
@@ -878,7 +890,7 @@ void renderNode(SceneNode* node) {
 
     glUniformMatrix4fv(phongShader->getUniformFromName("viewProjectionMatrix"), 1, GL_FALSE, glm::value_ptr(node->viewProjectionMatrix));
 
-    glUniform3fv(phongShader->getUniformFromName("textPos"), 1, glm::value_ptr(screenPos));
+    //glUniform3fv(phongShader->getUniformFromName("textPos"), 1, glm::value_ptr(screenPos));
 
     glUniformMatrix4fv(phongShader->getUniformFromName("modelMatrix"), 1, GL_FALSE, glm::value_ptr(node->modelMatrix));
 
@@ -887,7 +899,8 @@ void renderNode(SceneNode* node) {
 
 
     glUniform1i(phongShader->getUniformFromName("useTexture"), 0);
-    glUniform1i(phongShader->getUniformFromName("useInstance"), 0);
+    glUniform1i(instancingShader->getUniformFromName("useTexture"), 0);
+    //glUniform1i(phongShader->getUniformFromName("useInstance"), 0);
 
     std::string number = std::to_string(NumLightProcessed);
     //std::string numSprite = std::to_string(0);
@@ -915,13 +928,14 @@ void renderNode(SceneNode* node) {
         case INCTANCED_GEOMETRY:
             instancingShader->activate();
             //glUniform1i(phongShader->getUniformFromName("useInstance"), 1);
+            glUniform1i(instancingShader->getUniformFromName("useTexture"), 0);
             glUniformMatrix4fv(instancingShader->getUniformFromName("MVP"), 1, GL_FALSE, glm::value_ptr(node->modelViewProjectionMatrix)); // MVP
+            glUniformMatrix4fv(instancingShader->getUniformFromName("modelViewMatrix"), 1, GL_FALSE, glm::value_ptr(node->modelViewMatrix));
             glUniformMatrix4fv(instancingShader->getUniformFromName("viewProjectionMatrix"), 1, GL_FALSE, glm::value_ptr(node->viewProjectionMatrix));
             glUniformMatrix3fv(instancingShader->getUniformFromName("normalMatrix"), 1, GL_FALSE, glm::value_ptr(normalMatrix));
             glUniformMatrix4fv(instancingShader->getUniformFromName("modelMatrix"), 1, GL_FALSE, glm::value_ptr(node->modelMatrix));
 
             //node->model.drawModel(instancingShader);
-            glUniform1i(instancingShader->getUniformFromName("useTexture"), 0);
 
             if (node->vertexArrayObjectID != -1) {
                 glBindVertexArray(node->vertexArrayObjectID);
@@ -934,11 +948,6 @@ void renderNode(SceneNode* node) {
             {
             }*/
 
-            //    
-            //    /*glBindVertexArray(node->vertexArrayObjectID);
-            //    glDrawElementsInstanced(GL_TRIANGLES, rock.meshes[i].indices.size(), GL_UNSIGNED_INT, 0, amount
-            //    );*/
-
             //    //glBindVertexArray(node->vertexArrayObjectID);
             //    //glDrawElements(GL_TRIANGLES, node->VAOIndexCount, GL_UNSIGNED_INT, nullptr);
             //}
@@ -948,7 +957,7 @@ void renderNode(SceneNode* node) {
         case TEXTURED_GEOMETRY:
             phongShader->activate();
 
-            glUniform1i(phongShader->getUniformFromName("useTexture"), 1);
+            //glUniform1i(phongShader->getUniformFromName("useTexture"), 1);
             glBindTextureUnit(0, node->diffuseTextureID);
             glBindTextureUnit(1, node->normalTextureID);
             glBindTextureUnit(2, node->roughnessTextureID);
@@ -960,6 +969,8 @@ void renderNode(SceneNode* node) {
                 glBindVertexArray(node->vertexArrayObjectID);
                 glDrawElements(GL_TRIANGLES, node->VAOIndexCount, GL_UNSIGNED_INT, nullptr);
             }
+
+            glUniform1i(phongShader->getUniformFromName("useTexture"), 0);
             break;
         case OVERLAY: 
             overlayShader->activate();
@@ -1000,6 +1011,15 @@ void renderNode(SceneNode* node) {
             glUniform1f(phongShader->getUniformFromName(("pointLight[" + number + "].constant").c_str()), node->constant);
             glUniform1f(phongShader->getUniformFromName(("pointLight[" + number + "].linear").c_str()), node->linear);
             glUniform1f(phongShader->getUniformFromName(("pointLight[" + number + "].quadratic").c_str()), 0.0f);
+
+            instancingShader->activate();
+            glUniform3fv(instancingShader->getUniformFromName(("pointLights[" + number + "].position").c_str()), 1, glm::value_ptr(glm::vec3(pos.x, pos.y, pos.z)));
+            //glUniform3fv(phongShader->getUniformFromName(("pointLights["+ number +"].lightColor").c_str()), 1, glm::value_ptr(lightSources[NumLightProcessed].lightColor));
+            glUniform3fv(instancingShader->getUniformFromName(("pointLights[" + number + "].lightColor").c_str()), 1, glm::value_ptr(node->lightColor));
+            glUniform1f(instancingShader->getUniformFromName(("pointLight[" + number + "].constant").c_str()), node->constant);
+            glUniform1f(instancingShader->getUniformFromName(("pointLight[" + number + "].linear").c_str()), node->linear);
+            glUniform1f(instancingShader->getUniformFromName(("pointLight[" + number + "].quadratic").c_str()), 0.0f);
+
             NumLightProcessed++;
             break;
         case SPOT_LIGHT: break;

@@ -13,7 +13,6 @@ in mat3 TBN;
 in vec3 tangent;
 
 #define NR_POINT_LIGHTS 4
-#define NR_TEXTURES 1
 
 struct PointLight {    
     vec3 position;
@@ -177,9 +176,13 @@ void main()
     result += ambient;
     result += emissionColor; 
 //    result += dither(textureCoordinates);
-
+    
     
     fragColor = vec4(result, 1.0);
+
+    if (useTexture == 1) {
+        fragColor = vec4(vec3(1,0,0), 1.0);
+    }
 //    brightColor = vec4(1-result, 1.0);
 //    FragColor = texture(diffuseTexture, textureCoordinates);
     brightColor = vec4(vec3(0), 1);

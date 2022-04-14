@@ -44,11 +44,6 @@ void main()
 
     textureCoordinates = textureCoordinates_in;
 
-//    if (useInstance==1) {
-//        gl_Position = viewProjectionMatrix * instanceMatrix * vec4(position, 1.0f);
-//    } else {
-//    }
-
     gl_Position = MVP * vec4(position, 1.0f);
     fragPos = vec3(modelMatrix * vec4(position, 1.0f));
 }

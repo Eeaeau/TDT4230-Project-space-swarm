@@ -1,11 +1,12 @@
 #version 450 core
 
-in layout(location = 0) vec3 position;
+in layout(location = 0) vec3 position_in;
 in layout(location = 1) vec3 normal_in;
 in layout(location = 2) vec2 textureCoordinates_in;
 in layout(location = 3) vec3 tangent_in;
 in layout(location = 4) vec3 bitangent_in;
-in layout(location = 5) mat4 instanceMatrix;
+in layout(location = 5) vec3 instancePos;
+in layout(location = 6) mat4 instanceMatrix;
 
 uniform mat4 MVP;
 uniform mat4 viewProjectionMatrix;
@@ -14,7 +15,6 @@ uniform mat3 normalMatrix;
 uniform mat4 modelViewMatrix;
 uniform mat4 modelMatrix;
 //uniform vec3 viewPos;
-//uniform int useInstance;
 
 
 //out layout(location = 0) vec3 normal_out;
@@ -45,9 +45,19 @@ void main()
 
     textureCoordinates = textureCoordinates_in;
 
-//    gl_Position = MVP * instanceMatrix * vec4(position, 1.0f);
-//    gl_Position = MVP * vec4(position, 1.0f);
-    gl_Position = MVP  * vec4(position + vec3(10* mod(gl_InstanceID, 2), 0, 10*gl_InstanceID), 1.0f);
+//    vec3 position = position_in + instancePos;
+    vec3 position = position_in;
 
-    fragPos = vec3(modelMatrix * instanceMatrix * vec4(position, 1.0f));
+    // calculates current position
+	position = vec3(instanceMatrix * vec4(position, 1.0f));
+
+//    gl_Position = MVP * instanceMatrix * vec4(position, 1.0f);
+    gl_Position = viewProjectionMatrix * vec4(position, 1.0f);
+    gl_Position = MVP * vec4(position, 1.0f);
+
+//    gl_Position = viewProjectionMatrix * instanceMatrix * vec4(position, 1.0f);
+//    gl_Position = MVP  * vec4(position + vec3(10* mod(gl_InstanceID, 2), 0, 10*gl_InstanceID), 1.0f);
+
+//    fragPos = vec3(modelMatrix * vec4(position, 1.0f));
+    fragPos = vec3(modelMatrix * vec4(position, 1.0f));
 }

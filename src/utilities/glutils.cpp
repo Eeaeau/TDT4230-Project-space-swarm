@@ -78,36 +78,79 @@ unsigned int& generateBuffer(Mesh &mesh, unsigned int amount) {
 //    return VAOs;
 //}
 
-GLuint generateInctancedBuffer(Mesh &mesh, const std::vector<glm::mat4>& modelMatrices, const GLuint amount) {
+GLuint generateInctancedBuffer(Mesh &mesh, const std::vector<glm::mat4>& modelMatrices) {
+ 
+    int amount = modelMatrices.size();
+
+    
+
+    std::size_t vec4Size = sizeof(glm::vec4);
+    std::size_t mat4Size = sizeof(glm::mat4);
+    
+    int attribLoc = 6;
+    int matDim = 4;
     // vertex buffer object
     unsigned int buffer;
     glGenBuffers(1, &buffer);
     glBindBuffer(GL_ARRAY_BUFFER, buffer);
-    glBufferData(GL_ARRAY_BUFFER, amount * sizeof(glm::mat4), modelMatrices.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, amount * mat4Size, modelMatrices.data(), GL_STATIC_DRAW);
+
 
     auto VAO = generateBuffer(mesh);
-
     glBindVertexArray(VAO);
-
     // vertex attributes
-    std::size_t vec4Size = sizeof(glm::vec4);
-    std::size_t mat4Size = sizeof(glm::mat4);
-    glEnableVertexAttribArray(5);
-    glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, mat4Size, (void*)0);
-    glEnableVertexAttribArray(6);
-    glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, mat4Size, (void*)(1 * vec4Size));
-    glEnableVertexAttribArray(7);
-    glVertexAttribPointer(7, 4, GL_FLOAT, GL_FALSE, mat4Size, (void*)(2 * vec4Size));
-    glEnableVertexAttribArray(8);
-    glVertexAttribPointer(8, 4, GL_FLOAT, GL_FALSE, mat4Size, (void*)(3 * vec4Size));
+    /*for (int locOffset = 0; locOffset < matDim; locOffset++) {
+        glEnableVertexAttribArray(locOffset);
+        glVertexAttribPointer(attribLoc + locOffset, matDim, GL_FLOAT, GL_FALSE, mat4Size, (void*)(locOffset * vec4Size));
+        
+        glVertexAttribDivisor(attribLoc + locOffset, 1);
+    }*/
+    glEnableVertexAttribArray(attribLoc);
+    glVertexAttribPointer(attribLoc, matDim, GL_FLOAT, GL_FALSE, mat4Size, (void*)0);
 
-    glVertexAttribDivisor(5, 1);
-    glVertexAttribDivisor(6, 1);
-    glVertexAttribDivisor(7, 1);
-    glVertexAttribDivisor(8, 1);
+    glEnableVertexAttribArray(attribLoc+1);
+    glVertexAttribPointer(attribLoc+1, matDim, GL_FLOAT, GL_FALSE, mat4Size, (void*)(1 * vec4Size));
 
+    glEnableVertexAttribArray(attribLoc + 2);
+    glVertexAttribPointer(attribLoc + 2, matDim, GL_FLOAT, GL_FALSE, mat4Size, (void*)(2 * vec4Size));
+
+    glEnableVertexAttribArray(attribLoc + 3);
+    glVertexAttribPointer(attribLoc + 3, matDim, GL_FLOAT, GL_FALSE, mat4Size, (void*)(3 * vec4Size));
+
+    glVertexAttribDivisor(attribLoc, 1);
+    glVertexAttribDivisor(attribLoc+1, 1);
+    glVertexAttribDivisor(attribLoc+2, 1);
+    glVertexAttribDivisor(attribLoc+3, 1);
+
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
     
+    return VAO;
+}
+
+GLuint generateInctancedBuffer(Mesh& mesh, const std::vector<glm::vec3>& modelPos, const GLuint amount) {
+    auto VAO = generateBuffer(mesh);
+    glBindVertexArray(VAO);
+
+    int attribLoc = 5;
+    int vecDim = 3;
+
+    std::size_t vec3Size = sizeof(glm::vec3);
+
+    // vertex buffer object
+    unsigned int buffer;
+    glGenBuffers(1, &buffer);
+    glBindBuffer(GL_ARRAY_BUFFER, buffer);
+    glBufferData(GL_ARRAY_BUFFER, amount * sizeof(glm::vec3), modelPos.data(), GL_STATIC_DRAW);
+
+    // vertex attributes
+    glEnableVertexAttribArray(attribLoc);
+    glVertexAttribPointer(attribLoc, vecDim, GL_FLOAT, GL_FALSE, vec3Size, 0);
+
+    glVertexAttribDivisor(attribLoc, 1);
+
+    glBindVertexArray(0);
 
     return VAO;
 }
