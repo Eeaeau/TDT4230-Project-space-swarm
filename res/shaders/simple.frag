@@ -75,6 +75,7 @@ float quadratic = 0.0032; // for some reason uniform did not work for this one
 float ballBaseRadius = 1;
 float ballSoftRadius = ballBaseRadius*2;
 
+float emissiveFactor = 0;
 
 vec3 CalcPointLight(PointLight pointLight, vec3 normal, vec3 fragPos, vec3 viewDir, bool Blinn) {
     
@@ -189,5 +190,5 @@ void main()
     if (fragBrightness(fragColor) > 0.9f) {
 		brightColor.rgb += fragColor.rgb;
 	}
-
+    brightColor *= emissiveFactor;
 }

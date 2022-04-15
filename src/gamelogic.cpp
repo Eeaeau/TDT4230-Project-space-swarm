@@ -210,26 +210,29 @@ std::vector <glm::mat4> distributeOnDisc(unsigned int amount, float radius, floa
         glm::mat4 model(1);
         //model = glm::mat4(1);
         //model = glm::translate(model, glm::vec3(1, 0, 0));
-        model = model * glm::rotate(glm::vec3(i).x, glm::vec3(1, 0, 0));
-        //// 1. translation: displace along circle with 'radius' in range [-offset, offset]
-        //float angle = (float)i / (float)amount * 360.0f;
-        //float displacement = (rand() % (int)(2 * offset * 100)) / 100.0f - offset;
-        //float x = sin(angle) * radius + displacement;
-        //displacement = (rand() % (int)(2 * offset * 100)) / 100.0f - offset;
-        //float y = displacement * 0.4f; // keep height of field smaller compared to width of x and z
-        //displacement = (rand() % (int)(2 * offset * 100)) / 100.0f - offset;
-        //float z = cos(angle) * radius + displacement;
-        //model = glm::translate(model, glm::vec3(x, y, z));
+        //model = model * glm::rotate(glm::vec3(i).x, glm::vec3(1, 0, 0));
 
-        //// 2. scale: scale between 0.05 and 0.25f
-        //float scale = (rand() % 20) / 100.0f + 0.05;
-        //model = glm::scale(model, glm::vec3(scale));
 
-        //// 3. rotation: add random rotation around a (semi)randomly picked rotation axis vector
-        //float rotAngle = (rand() % 360);
-        //model = glm::rotate(model, rotAngle, glm::vec3(0.4f, 0.6f, 0.8f));
 
-        //// 4. now add to list of matrices
+        // 1. translation: displace along circle with 'radius' in range [-offset, offset]
+        float angle = (float)i / (float)amount * 360.0f;
+        float displacement = (rand() % (int)(2 * offset * 100)) / 100.0f - offset;
+        float x = sin(angle) * radius + displacement;
+        displacement = (rand() % (int)(2 * offset * 100)) / 100.0f - offset;
+        float y = displacement * 0.4f; // keep height of field smaller compared to width of x and z
+        displacement = (rand() % (int)(2 * offset * 100)) / 100.0f - offset;
+        float z = cos(angle) * radius + displacement;
+        model = glm::translate(model, glm::vec3(x, y, z));
+
+        // 2. scale: scale between 0.05 and 0.25f
+        float scale = (rand() % 20) / 100.0f + 0.05;
+        model = glm::scale(model, glm::vec3(scale));
+
+        // 3. rotation: add random rotation around a (semi)randomly picked rotation axis vector
+        float rotAngle = (rand() % 360);
+        model = glm::rotate(model, rotAngle, glm::vec3(0.4f, 0.6f, 0.8f));
+
+        // 4. now add to list of matrices
         instanceMatrix[i] = model;
     }
     return instanceMatrix;
@@ -462,7 +465,7 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     rootNode->children.push_back(padNode);
 
     rootNode->children.push_back(ballNode);
-    padNode->children.push_back(ball2Node);
+    //padNode->children.push_back(ball2Node);
 
     //rootNode->children.push_back(textureAtlasNode);
     //rootNode->children.push_back(textEmptyNode);
@@ -537,12 +540,12 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     //textureAtlasNode->normalTextureID = brickNormalID;
 
     
-    unsigned int amount = 2;
+    unsigned int amount = 30;
     //glm::mat4* instanceMatrix = new glm::mat4[amount];
     
 
     std::srand(glfwGetTime()); // initialize random seed	
-    float radius = 2.0;
+    float radius = 5.0;
     float offset = 1.0;
 
 
@@ -590,10 +593,10 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
 
     magmaSphere->model = GLModel(magmaSpherePath.c_str());
     magmaSphere->nodeType = GLTF_GEOMETRY;
-    magmaSphere->position = boxCenter;
+    magmaSphere->position = boxCenter+glm::vec3(0,2,0);
     magmaSphere->scale= glm::vec3(3);
 
-    //rootNode->children.push_back(magmaSphere);
+    rootNode->children.push_back(magmaSphere);
 
     std::cout << fmt::format("Initialized scene with {} SceneNodes.", totalChildren(rootNode)) << std::endl;
 
@@ -923,6 +926,7 @@ void renderNode(SceneNode* node) {
             //if (node->vertexArrayObjectID != -1) {
             //}
                 //drawModel(node->vertexArrayObjectID, node->model);
+            glUniformMatrix3fv(pbrShader->getUniformFromName("normalMatrix"), 1, GL_FALSE, glm::value_ptr(normalMatrix));
             node->model.drawModel(pbrShader);
             break;
 

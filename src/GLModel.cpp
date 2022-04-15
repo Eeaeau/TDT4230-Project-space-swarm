@@ -101,7 +101,8 @@ std::map<int, GLuint> GLModel::bindMesh(std::map<int, GLuint> vbos,
             int vaa = -1;
             if (attrib.first.compare("POSITION") == 0) vaa = 0;
             if (attrib.first.compare("NORMAL") == 0) vaa = 1;
-            if (attrib.first.compare("TEXCOORD_0") == 0) vaa = 2;
+            if (attrib.first.compare("TANGENT") == 0) vaa = 2;
+            if (attrib.first.compare("TEXCOORD_0") == 0) vaa = 3;
             if (vaa > -1) {
                 glEnableVertexAttribArray(vaa);
                 glVertexAttribPointer(vaa, size, accessor.componentType,
@@ -263,6 +264,13 @@ void GLModel::drawMesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Gloom::Shad
         //glUniform3f(3, static_cast<GLfloat>(emissiveFactor[0]), static_cast<GLfloat>(emissiveFactor[1]), static_cast<GLfloat>(emissiveFactor[2]));
         glUniform3f(shader->getUniformFromName("emissiveFactor"), static_cast<GLfloat>(emissiveFactor[0]), static_cast<GLfloat>(emissiveFactor[1]), static_cast<GLfloat>(emissiveFactor[2]));
         glUniform1f(shader->getUniformFromName("roughnessFactor"), roughnessFactor);
+        
+        if (normalMap) {
+            glUniform1f(shader->getUniformFromName("useTexture"), 1);
+        }
+        else {
+            glUniform1f(shader->getUniformFromName("useTexture"), 0);
+        }
 
         if (instancing == 1)
         {

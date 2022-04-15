@@ -1,11 +1,14 @@
 #version 450 core
 
 in vec3 normal;
+in vec3 tangent;
 in vec3 position;
 in vec2 texcoord;
+in mat3 TBN;
 
 //layout(location = 3) in uniform vec3 emissiveFactor;
 uniform vec3 emissiveFactor;
+uniform int useTexture;
 //uniform float roughnessFactor;
 
 //uniform sampler2D tex;
@@ -13,8 +16,9 @@ layout(binding = 0) uniform sampler2D diffuseTexture;
 layout(binding = 1) uniform sampler2D normalTexture;
 layout(binding = 2) uniform sampler2D roughnessTexture;
 
-vec3 sun_position = vec3(100); 
-vec3 sun_color = vec3(1); 
+vec3 sun_position = vec3(-1, 1, -1); 
+vec3 sun_color = vec3(2);
+vec3 ambient= vec3(0.01); 
 
 //out vec4 fragColor;
 layout (location = 0) out vec4 fragColor;
@@ -25,13 +29,27 @@ float fragBrightness(vec4 fragColor) {
     return average;
 }
 
+vec4 emissiveColor = texture(diffuseTexture, texcoord);
+
 void main() {
+
+	vec3 normal = normalize(normal);
+
+	normal = texture(normalTexture, texcoord).rgb*2-1;
+	normal = normalize(TBN * normal);
+//	if (useTexture == 1) {
+//		normal = vec3(1);
+//	}
+
 //	float lum = max(dot(normal, normalize(sun_position)), 0.0);
-	float lum = max(dot(texture(normalTexture, texcoord).rgb, normalize(sun_position)), 0.0);
-	fragColor = texture(diffuseTexture, texcoord) * vec4((0.3 + 0.7 * lum) * sun_color, 1.0);
+//	texture(normalTexture, texcoord).rgb
+	float lum = max(dot(normal, normalize(sun_position)), 0.0);
+	fragColor = texture(diffuseTexture, texcoord) * vec4((ambient + lum) * sun_color, 1.0);
+//	fragColor.rgb = normal;
 
 	brightColor vec4(vec3(0), 1);
-    if (fragBrightness(fragColor) > 0.4f) {
+
+    if (fragBrightness(emissiveColor) > 0.3f) {
 		brightColor.rgb += fragColor.rgb;
 	}
 
