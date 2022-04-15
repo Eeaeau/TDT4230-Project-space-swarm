@@ -207,9 +207,10 @@ std::vector <glm::mat4> distributeOnDisc(unsigned int amount, float radius, floa
     std::vector <glm::mat4> instanceMatrix(amount);
     for (unsigned int i = 0; i < amount; i++)
     {
-        glm::mat4 model;
+        glm::mat4 model(1);
+        //model = glm::mat4(1);
         //model = glm::translate(model, glm::vec3(1, 0, 0));
-        model = model* glm::rotate(glm::vec3(i).x, glm::vec3(1, 0, 0));
+        model = model * glm::rotate(glm::vec3(i).x, glm::vec3(1, 0, 0));
         //// 1. translation: displace along circle with 'radius' in range [-offset, offset]
         //float angle = (float)i / (float)amount * 360.0f;
         //float displacement = (rand() % (int)(2 * offset * 100)) / 100.0f - offset;
@@ -550,11 +551,11 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
 
     ball2Node->nodeType = INCTANCED_GEOMETRY;
     ball2Node->modelMatrices = instanceMatrix;
-    ball2Node->vertexArrayObjectID = generateInctancedBuffer(sphere2, instanceMatrix);
+    ball2Node->vertexArrayObjectID = generateInctancedBuffer2(sphere2, instanceMatrix);
 
     testCubeNode->nodeType = INCTANCED_GEOMETRY;
     testCubeNode->modelMatrices = instanceMatrix;
-    testCubeNode->vertexArrayObjectID = generateInctancedBuffer(testCube, instanceMatrix);
+    testCubeNode->vertexArrayObjectID = generateInctancedBuffer2(testCube, instanceMatrix);
 
     //std::string input_filename = "../res/mesh/magma_sphere/magma_sphere.gltf";
     std::string input_filename = "../res/mesh/teapot.gltf";

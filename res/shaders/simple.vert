@@ -32,7 +32,7 @@ void main()
 {
     vec3 bitangent = normalize(normalMatrix * bitangent_in);
 
-    tangent = normalize( normalMatrix * tangent_in);
+    tangent = normalize(normalMatrix * tangent_in);
 
 	normal = normalize(normalMatrix * normal_in);
     

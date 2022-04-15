@@ -8,6 +8,11 @@ in layout(location = 4) vec3 bitangent_in;
 in layout(location = 5) vec3 instancePos;
 in layout(location = 6) mat4 instanceMatrix;
 
+layout(std430, binding = 0) buffer modelMatrices
+{
+    mat4 model[];
+};
+
 uniform mat4 MVP;
 uniform mat4 viewProjectionMatrix;
 //uniform mat4 instanceMatrix;
@@ -49,15 +54,15 @@ void main()
     vec3 position = position_in;
 
     // calculates current position
-	position = vec3(instanceMatrix * vec4(position, 1.0f));
+//	position = vec3(modelMatrix * instanceMatrix * vec4(position, 1.0f));
 
+    gl_Position = MVP * model[gl_InstanceID] * vec4(position, 1.0f);
+//    gl_Position = viewProjectionMatrix * vec4(position, 1.0f);
 //    gl_Position = MVP * instanceMatrix * vec4(position, 1.0f);
-    gl_Position = viewProjectionMatrix * vec4(position, 1.0f);
-    gl_Position = MVP * vec4(position, 1.0f);
 
 //    gl_Position = viewProjectionMatrix * instanceMatrix * vec4(position, 1.0f);
 //    gl_Position = MVP  * vec4(position + vec3(10* mod(gl_InstanceID, 2), 0, 10*gl_InstanceID), 1.0f);
 
-//    fragPos = vec3(modelMatrix * vec4(position, 1.0f));
     fragPos = vec3(modelMatrix * vec4(position, 1.0f));
+//    fragPos = vec3(modelMatrix * instanceMatrix* vec4(position, 1.0f));
 }

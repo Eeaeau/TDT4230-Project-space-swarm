@@ -129,7 +129,9 @@ GLuint generateInctancedBuffer(Mesh &mesh, const std::vector<glm::mat4>& modelMa
     return VAO;
 }
 
-GLuint generateInctancedBuffer(Mesh& mesh, const std::vector<glm::vec3>& modelPos, const GLuint amount) {
+GLuint generateInctancedBuffer(Mesh& mesh, const std::vector<glm::vec3>& modelPos) {
+
+    const GLuint amount = modelPos.size();
     auto VAO = generateBuffer(mesh);
     glBindVertexArray(VAO);
 
@@ -149,6 +151,30 @@ GLuint generateInctancedBuffer(Mesh& mesh, const std::vector<glm::vec3>& modelPo
     glVertexAttribPointer(attribLoc, vecDim, GL_FLOAT, GL_FALSE, vec3Size, 0);
 
     glVertexAttribDivisor(attribLoc, 1);
+
+    glBindVertexArray(0);
+
+    return VAO;
+}
+
+GLuint generateInctancedBuffer2(Mesh& mesh, const std::vector<glm::mat4>& modelMatrices) {
+
+    const GLuint amount = modelMatrices.size();
+    auto VAO = generateBuffer(mesh);
+    glBindVertexArray(VAO);
+
+    int attribLoc = 6;
+    int vecDim = 4;
+
+    std::size_t vec4Size = sizeof(glm::vec4);
+
+    // Shader Storage Buffer Object
+    GLuint ssboModelMatrices;
+    glGenBuffers(1, &ssboModelMatrices);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboModelMatrices);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(glm::mat4) * modelMatrices.size(), modelMatrices.data(), GL_STATIC_DRAW);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssboModelMatrices);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
     glBindVertexArray(0);
 
