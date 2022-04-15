@@ -20,7 +20,7 @@ GLModel::GLModel(const char* filename, unsigned int instancing, std::vector<glm:
     loadModel(filename);
     this->instancing = instancing;
     this->instanceMatrix = instanceMatrix;
-    this->vaos = std::vector<GLuint>(instancing);
+    //this->vaos = std::vector<GLuint>(instancing);
     bindModel();
 }
 
@@ -199,6 +199,9 @@ std::map<int, GLuint> GLModel::bindMesh(std::map<int, GLuint> vbos,
 void GLModel::bindModelNodes(std::map<int, GLuint> vbos, tinygltf::Model& model,
     tinygltf::Node& node) {
     if ((node.mesh >= 0) && (node.mesh < model.meshes.size())) {
+
+
+
         bindMesh(vbos, model, model.meshes[node.mesh]);
     }
 
@@ -211,14 +214,6 @@ void GLModel::bindModelNodes(std::map<int, GLuint> vbos, tinygltf::Model& model,
 std::vector<GLuint> GLModel::bindModel() {
     /*for (size_t i = 0; i < vaos.size(); ++i) {
     }*/
-        //if (instancing > 1) {
-        //    // vertex buffer object
-        //    unsigned int buffer;
-        //    glGenBuffers(1, &buffer);
-        //    glBindBuffer(GL_ARRAY_BUFFER, buffer);
-        //    glBufferData(GL_ARRAY_BUFFER, instancing * sizeof(glm::mat4), instanceMatrix.data(), GL_STATIC_DRAW);
-        //}
-        //auto vao = vaos[i];
         
 
         glGenVertexArrays(1, &this->VAO);
@@ -235,7 +230,7 @@ std::vector<GLuint> GLModel::bindModel() {
         for (size_t i = 0; i < VBOs.size(); ++i) {
             glDeleteBuffers(1, &VBOs[i]);
         }
-    return this->vaos;
+    return this->VAOs;
 }
 
 
@@ -248,6 +243,7 @@ void GLModel::drawMesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Gloom::Shad
         auto primitiveMat = &materials[primitive.material];
         
         auto baseColor = primitiveMat->pbrMetallicRoughness.baseColorTexture.index;
+        int useNormalTexture = -1;
         auto normalMap = primitiveMat->normalTexture.index;
         auto emissiveFactor = primitiveMat->emissiveFactor;
         auto roughnessMap = primitiveMat->pbrMetallicRoughness.metallicRoughnessTexture.index;
@@ -271,17 +267,17 @@ void GLModel::drawMesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Gloom::Shad
             emissiveFactor = { 0, 0, 0};
         }
 
+        useNormalTexture = 1;
+        if (useNormalTexture) {
+        }
+
         //glUniform3f(3, static_cast<GLfloat>(emissiveFactor[0]), static_cast<GLfloat>(emissiveFactor[1]), static_cast<GLfloat>(emissiveFactor[2]));
         glUniform3f(shader->getUniformFromName("emissiveFactor"), static_cast<GLfloat>(emissiveFactor[0]), static_cast<GLfloat>(emissiveFactor[1]), static_cast<GLfloat>(emissiveFactor[2]));
         glUniform1f(shader->getUniformFromName("roughnessFactor"), roughnessFactor);
-        
-        if (normalMap) {
-            glUniform1f(shader->getUniformFromName("useTexture"), 1);
-        }
-        else {
-            glUniform1f(shader->getUniformFromName("useTexture"), 0);
-        }
+        glUniform1i(shader->getUniformFromName("useNormalTexture"), useNormalTexture);
 
+        glUniform1i(shader->getUniformFromName("useInstancing"), 0);
+        
         if (instancing == 1)
         {
             glDrawElements(primitive.mode, indexAccessor.count,
@@ -289,6 +285,7 @@ void GLModel::drawMesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Gloom::Shad
                 BUFFER_OFFSET(indexAccessor.byteOffset));
         }
         else {
+            glUniform1i(shader->getUniformFromName("useInstancing"), 1);
             glDrawElementsInstanced(primitive.mode, indexAccessor.count,
                 indexAccessor.componentType,
                 BUFFER_OFFSET(indexAccessor.byteOffset), instancing);
@@ -315,15 +312,32 @@ void GLModel::drawModel(Gloom::Shader* shader) {
     //glBindVertexArray(this->vaos[i]);
 
 
+    
     glBindVertexArray(VAO);
     const tinygltf::Scene& scene = this->scenes[this->defaultScene];
     for (size_t i = 0; i < scene.nodes.size(); ++i) {
         drawModelNodes(*this, this->nodes[scene.nodes[i]], shader);
     }
-
     glBindVertexArray(0);
 }
 
+
+void GLModel::updateInstanceMatrix(std::vector<glm::mat4> newInstanceMatrix) {
+
+ //   glBindVertexArray(VAO);
+
+ ///*   for (size_t i = 0; i < vaos.size(); ++i) {
+ //       
+ //   }*/
+
+ //   // Shader Storage Buffer Object
+ //   glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboModelMatrices);
+ //   glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(glm::mat4) * newInstanceMatrix.size(), newInstanceMatrix.data(), GL_STATIC_DRAW);
+ //   glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssboModelMatrices);
+ //   glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+ //   glBindVertexArray(0);
+}
 
 
 

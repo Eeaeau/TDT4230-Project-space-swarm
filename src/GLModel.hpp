@@ -24,6 +24,8 @@ public:
     void drawModel(Gloom::Shader *shader);
     //void drawModel(GLuint vao);
 
+    void GLModel::updateInstanceMatrix(std::vector<glm::mat4> newInstanceMatrix);
+
 private:
     bool loadModel(const char* filename);
 
@@ -32,7 +34,7 @@ private:
     // Holds number of instances (if 1 the mesh will be rendered normally)
     unsigned int instancing; 
     GLuint ssboModelMatrices;
-    std::vector<GLuint> vaos;
+    std::vector<GLuint> VAOs;
     GLuint VAO;
     std::map<int, GLuint> VBOs;
 

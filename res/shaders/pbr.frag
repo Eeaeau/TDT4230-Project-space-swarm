@@ -8,7 +8,7 @@ in mat3 TBN;
 
 //layout(location = 3) in uniform vec3 emissiveFactor;
 uniform vec3 emissiveFactor;
-uniform int useTexture;
+uniform int useNormalTexture;
 //uniform float roughnessFactor;
 
 //uniform sampler2D tex;
@@ -34,12 +34,10 @@ vec4 emissiveColor = texture(diffuseTexture, texcoord);
 void main() {
 
 	vec3 normal = normalize(normal);
-
-	normal = texture(normalTexture, texcoord).rgb*2-1;
-	normal = normalize(TBN * normal);
-//	if (useTexture == 1) {
-//		normal = vec3(1);
-//	}
+	if (useNormalTexture == 1) {
+		normal = texture(normalTexture, texcoord).rgb*2-1;
+		normal = normalize(TBN * normal);
+	}
 
 //	float lum = max(dot(normal, normalize(sun_position)), 0.0);
 //	texture(normalTexture, texcoord).rgb

@@ -61,6 +61,7 @@ SceneNode* animatedLightNode;
 SceneNode* textureAtlasNode;
 SceneNode* textEmptyNode;
 SceneNode* magmaSphere;
+SceneNode* shipNode;
 
 // Create Frame Buffer Object
 GLuint postProcessingFBO;
@@ -417,6 +418,7 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     rootNode = createSceneNode();
     gltfNode = createSceneNode();
     magmaSphere = createSceneNode();
+    shipNode = createSceneNode();
     boxNode  = createSceneNode();
     testCubeNode = createSceneNode();
     testCubeNode->position = boxCenter+glm::vec3(0);
@@ -543,13 +545,13 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     //textureAtlasNode->normalTextureID = brickNormalID;
 
     
-    unsigned int amount = 200;
+    unsigned int amount = 2000;
     //glm::mat4* instanceMatrix = new glm::mat4[amount];
     
 
     std::srand(glfwGetTime()); // initialize random seed	
-    float radius = 30.0;
-    float offset = 10.0;
+    float radius = 40.0;
+    float offset = 5.0;
 
 
     auto instanceMatrix = distributeOnDisc(amount, radius, offset);
@@ -557,11 +559,11 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
 
     ball2Node->nodeType = INCTANCED_GEOMETRY;
     ball2Node->modelMatrices = instanceMatrix;
-    ball2Node->vertexArrayObjectID = generateInctancedBuffer2(sphere2, instanceMatrix);
+    ball2Node->vertexArrayObjectID = generateInctancedBuffer2(sphere2, ball2Node->modelMatrices);
 
     testCubeNode->nodeType = INCTANCED_GEOMETRY;
     testCubeNode->modelMatrices = instanceMatrix;
-    testCubeNode->vertexArrayObjectID = generateInctancedBuffer2(testCube, instanceMatrix);
+    testCubeNode->vertexArrayObjectID = generateInctancedBuffer2(testCube, testCubeNode->modelMatrices);
 
     //std::string input_filename = "../res/mesh/magma_sphere/magma_sphere.gltf";
     std::string input_filename = "../res/mesh/teapot.gltf";
@@ -594,13 +596,23 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     std::string magmaSpherePath = "../res/mesh/magma_sphere/magma_sphere.gltf";
 
     std::string laserPlanePath = "..res/mesh/laser_plane/laser_plane.gltf";
+    std::string suzanePath = "../res/mesh/suzane/suzane.gltf";
+    std::string shipPath = "..res/mesh/MC90/MC90.gltf";
 
-    magmaSphere->model = GLModel(magmaSpherePath.c_str());
+    magmaSphere->modelMatrices = instanceMatrix;
+    magmaSphere->model = GLModel(magmaSpherePath.c_str(), amount, magmaSphere->modelMatrices);
     magmaSphere->nodeType = GLTF_GEOMETRY;
     magmaSphere->position = boxCenter+glm::vec3(0,2,0);
     magmaSphere->scale= glm::vec3(3);
-
     rootNode->children.push_back(magmaSphere);
+    
+    
+    //magmaSphere->modelMatrices = instanceMatrix;
+    //shipNode->model = GLModel(suzanePath.c_str());
+    //shipNode->nodeType = GLTF_GEOMETRY;
+    //shipNode->position = boxCenter+glm::vec3(0,2,0);
+    //shipNode->scale= glm::vec3(3);
+    //rootNode->children.push_back(shipNode);
 
     std::cout << fmt::format("Initialized scene with {} SceneNodes.", totalChildren(rootNode)) << std::endl;
 
@@ -703,6 +715,14 @@ void updateFrame(GLFWwindow* window) {
             fractionFrameComplete = elapsedTimeInFrame / frameDuration;
 
             testCubeNode->rotation.y += timeDelta*0.1;
+
+            magmaSphere->rotation.y += timeDelta*0.01;
+
+            for (auto& matrix : magmaSphere->modelMatrices) {
+                matrix *= glm::rotate(static_cast<float>(timeDelta), glm::vec3(0, 1, 0));
+            }
+
+            magmaSphere->model.updateInstanceMatrix(magmaSphere->modelMatrices);
 
             //double ballYCoord;
 
@@ -903,6 +923,8 @@ void renderNode(SceneNode* node) {
             pbrShader->activate();
             //phongShader->activate();
             glUniformMatrix4fv(pbrShader->getUniformFromName("MVP"), 1, GL_FALSE, glm::value_ptr(node->modelViewProjectionMatrix)); // MVP
+            
+            //glUniform1f(pbrShader->getUniformFromName("useInstancing"), 1);
             //glUniform1i(phongShader->getUniformFromName("useTexture"), 1);
             //if (node->vertexArrayObjectID != -1) {
             //}
