@@ -31,6 +31,7 @@ private:
     //Gloom::Shader shader;
     // Holds number of instances (if 1 the mesh will be rendered normally)
     unsigned int instancing; 
+    GLuint ssboModelMatrices;
     std::vector<GLuint> vaos;
     GLuint VAO;
     std::map<int, GLuint> VBOs;

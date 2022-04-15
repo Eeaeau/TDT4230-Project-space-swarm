@@ -47,6 +47,7 @@ unsigned int previousKeyFrame = 0;
 
 SceneNode* rootNode;
 SceneNode* gltfNode;
+SceneNode* laserNode;
 SceneNode* boxNode;
 SceneNode* testCubeNode;
 SceneNode* ballNode;
@@ -430,6 +431,8 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     textEmptyNode = createSceneNode();
     textEmptyNode->position = boxCenter;
 
+    laserNode = createSceneNode();
+    
     ballLightNode = createSceneNode();
     ballLightNode->nodeType = POINT_LIGHT;
     ballLightNode->lightColor = glm::vec3(10, 10, 10);
@@ -460,11 +463,11 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     //animatedLightNode->lightColor = glm::vec3(8);
 
     // attatch to scene graph
-    rootNode->children.push_back(boxNode);
+    //rootNode->children.push_back(boxNode);
 
-    rootNode->children.push_back(padNode);
+    //rootNode->children.push_back(padNode);
 
-    rootNode->children.push_back(ballNode);
+    //rootNode->children.push_back(ballNode);
     //padNode->children.push_back(ball2Node);
 
     //rootNode->children.push_back(textureAtlasNode);
@@ -540,13 +543,13 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     //textureAtlasNode->normalTextureID = brickNormalID;
 
     
-    unsigned int amount = 30;
+    unsigned int amount = 200;
     //glm::mat4* instanceMatrix = new glm::mat4[amount];
     
 
     std::srand(glfwGetTime()); // initialize random seed	
-    float radius = 5.0;
-    float offset = 1.0;
+    float radius = 30.0;
+    float offset = 10.0;
 
 
     auto instanceMatrix = distributeOnDisc(amount, radius, offset);
@@ -585,11 +588,12 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     //rootNode->children.push_back(gltfNode);
 
 
-    //ballNode->vertexArrayObjectID = teapot.bindModel();
     ballNode->nodeType = GLTF_GEOMETRY;
     ballNode->model = teapot;
 
     std::string magmaSpherePath = "../res/mesh/magma_sphere/magma_sphere.gltf";
+
+    std::string laserPlanePath = "..res/mesh/laser_plane/laser_plane.gltf";
 
     magmaSphere->model = GLModel(magmaSpherePath.c_str());
     magmaSphere->nodeType = GLTF_GEOMETRY;
@@ -610,16 +614,16 @@ void updateFrame(GLFWwindow* window) {
     double timeDelta = getTimeDeltaSeconds();
     double fractionFrameComplete;
 
-    const float ballBottomY = boxNode->position.y - (boxDimensions.y/2) + ballRadius + padDimensions.y;
-    const float ballTopY    = boxNode->position.y + (boxDimensions.y/2) - ballRadius;
-    const float BallVerticalTravelDistance = ballTopY - ballBottomY;
+    //const float ballBottomY = boxNode->position.y - (boxDimensions.y/2) + ballRadius + padDimensions.y;
+    //const float ballTopY    = boxNode->position.y + (boxDimensions.y/2) - ballRadius;
+    //const float BallVerticalTravelDistance = ballTopY - ballBottomY;
 
-    const float cameraWallOffset = 30; // Arbitrary addition to prevent ball from going too much into camera
+    //const float cameraWallOffset = 30; // Arbitrary addition to prevent ball from going too much into camera
 
-    const float ballMinX = boxNode->position.x - (boxDimensions.x/2) + ballRadius;
-    const float ballMaxX = boxNode->position.x + (boxDimensions.x/2) - ballRadius;
-    const float ballMinZ = boxNode->position.z - (boxDimensions.z/2) + ballRadius;
-    const float ballMaxZ = boxNode->position.z + (boxDimensions.z/2) - ballRadius - cameraWallOffset;
+    //const float ballMinX = boxNode->position.x - (boxDimensions.x/2) + ballRadius;
+    //const float ballMaxX = boxNode->position.x + (boxDimensions.x/2) - ballRadius;
+    //const float ballMinZ = boxNode->position.z - (boxDimensions.z/2) + ballRadius;
+    //const float ballMaxZ = boxNode->position.z + (boxDimensions.z/2) - ballRadius - cameraWallOffset;
 
     if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_1)) {
         mouseLeftPressed = true;
@@ -653,9 +657,9 @@ void updateFrame(GLFWwindow* window) {
             textureAtlasNode->vertexArrayObjectID = textEmptyNode->vertexArrayObjectID;
         }
 
-        ballPosition.x = ballMinX + (1 - padPositionX) * (ballMaxX - ballMinX);
+       /* ballPosition.x = ballMinX + (1 - padPositionX) * (ballMaxX - ballMinX);
         ballPosition.y = ballBottomY;
-        ballPosition.z = ballMinZ + (1 - padPositionZ) * ((ballMaxZ+cameraWallOffset) - ballMinZ);
+        ballPosition.z = ballMinZ + (1 - padPositionZ) * ((ballMaxZ+cameraWallOffset) - ballMinZ);*/
     } else {
         totalElapsedTime += timeDelta;
         if(hasLost) {
@@ -698,69 +702,44 @@ void updateFrame(GLFWwindow* window) {
             double frameDuration = frameEnd - frameStart;
             fractionFrameComplete = elapsedTimeInFrame / frameDuration;
 
-            double ballYCoord;
+            testCubeNode->rotation.y += timeDelta*0.1;
 
-            KeyFrameAction currentOrigin = keyFrameDirections.at(currentKeyFrame);
-            KeyFrameAction currentDestination = keyFrameDirections.at(currentKeyFrame + 1);
+            //double ballYCoord;
 
-            // Synchronize ball with music
-            if (currentOrigin == BOTTOM && currentDestination == BOTTOM) {
-                ballYCoord = ballBottomY;
-            } else if (currentOrigin == TOP && currentDestination == TOP) {
-                ballYCoord = ballBottomY + BallVerticalTravelDistance;
-            } else if (currentDestination == BOTTOM) {
-                ballYCoord = ballBottomY + BallVerticalTravelDistance * (1 - fractionFrameComplete);
-            } else if (currentDestination == TOP) {
-                ballYCoord = ballBottomY + BallVerticalTravelDistance * fractionFrameComplete;
-            }
+            //KeyFrameAction currentOrigin = keyFrameDirections.at(currentKeyFrame);
+            //KeyFrameAction currentDestination = keyFrameDirections.at(currentKeyFrame + 1);
 
             // Make ball move
-            const float ballSpeed = 60.0f;
+            /*const float ballSpeed = 60.0f;
             ballPosition.x += timeDelta * ballSpeed * ballDirection.x;
             ballPosition.y = ballYCoord;
-            ballPosition.z += timeDelta * ballSpeed * ballDirection.z;
-
-            // Make ball bounce
-            if (ballPosition.x < ballMinX) {
-                ballPosition.x = ballMinX;
-                ballDirection.x *= -1;
-            } else if (ballPosition.x > ballMaxX) {
-                ballPosition.x = ballMaxX;
-                ballDirection.x *= -1;
-            }
-            if (ballPosition.z < ballMinZ) {
-                ballPosition.z = ballMinZ;
-                ballDirection.z *= -1;
-            } else if (ballPosition.z > ballMaxZ) {
-                ballPosition.z = ballMaxZ;
-                ballDirection.z *= -1;
-            }
+            ballPosition.z += timeDelta * ballSpeed * ballDirection.z;*/
 
             if(options.enableAutoplay) {
-                padPositionX = 1-(ballPosition.x - ballMinX) / (ballMaxX - ballMinX);
-                padPositionZ = 1-(ballPosition.z - ballMinZ) / ((ballMaxZ+cameraWallOffset) - ballMinZ);
+                //padPositionX = 1-(ballPosition.x - ballMinX) / (ballMaxX - ballMinX);
+                //padPositionZ = 1-(ballPosition.z - ballMinZ) / ((ballMaxZ+cameraWallOffset) - ballMinZ);
             }
 
             // Check if the ball is hitting the pad when the ball is at the bottom.
             // If not, you just lost the game! (hehe)
-            if (jumpedToNextFrame && currentOrigin == BOTTOM && currentDestination == TOP) {
-                double padLeftX  = boxNode->position.x - (boxDimensions.x/2) + (1 - padPositionX) * (boxDimensions.x - padDimensions.x);
-                double padRightX = padLeftX + padDimensions.x;
-                double padFrontZ = boxNode->position.z - (boxDimensions.z/2) + (1 - padPositionZ) * (boxDimensions.z - padDimensions.z);
-                double padBackZ  = padFrontZ + padDimensions.z;
+            //if (jumpedToNextFrame && currentOrigin == BOTTOM && currentDestination == TOP) {
+            //    //double padLeftX  = boxNode->position.x - (boxDimensions.x/2) + (1 - padPositionX) * (boxDimensions.x - padDimensions.x);
+            //    //double padRightX = padLeftX + padDimensions.x;
+            //    //double padFrontZ = boxNode->position.z - (boxDimensions.z/2) + (1 - padPositionZ) * (boxDimensions.z - padDimensions.z);
+            //    //double padBackZ  = padFrontZ + padDimensions.z;
 
-                if (   ballPosition.x < padLeftX
-                    || ballPosition.x > padRightX
-                    || ballPosition.z < padFrontZ
-                    || ballPosition.z > padBackZ
-                ) {
-                    hasLost = true;
-                    if (options.enableMusic) {
-                        sound->stop();
-                        delete sound;
-                    }
-                }
-            }
+            //    if (   ballPosition.x < padLeftX
+            //        || ballPosition.x > padRightX
+            //        || ballPosition.z < padFrontZ
+            //        || ballPosition.z > padBackZ
+            //    ) {
+            //        hasLost = true;
+            //        if (options.enableMusic) {
+            //            sound->stop();
+            //            delete sound;
+            //        }
+            //    }
+            //}
         }
     }
 
@@ -768,10 +747,11 @@ void updateFrame(GLFWwindow* window) {
 
     // ------------------------------------ Camera position ------------------------------------ //
 
-    float speed = 100.0;
+    float cameraFaceDirectionFactor = glm::abs((cameraHeight - minCameraHeight)/(maxCameraHeight - minCameraHeight))+0.5;
+
+    float speed = cameraFaceDirectionFactor*50.0;
     float speedModifier = 3.0;
 
-    float cameraFaceDirectionFactor = glm::abs((cameraHeight - minCameraHeight)/(maxCameraHeight - minCameraHeight))+0.5;
 
     auto cameraFaceDirection = glm::vec3(0.0, -2.0* cameraFaceDirectionFactor, -1.0);
     auto cameraPlaneDirection = glm::vec3(0.0, 0.0, -1.0);
@@ -838,22 +818,23 @@ void updateFrame(GLFWwindow* window) {
 
     glm::mat4 VP = projection * ViewMatrix;
 
+    
+
+
     // Move and rotate various SceneNodes
-    boxNode->position = { 0, -10, -80 };
+    //boxNode->position = { 0, -10, -80 };
 
-    ballNode->position = ballPosition;
-    ballNode->scale = glm::vec3(ballRadius);
-    ballNode->rotation = { 0, totalElapsedTime*2, 0 };
+    //ballNode->position = ballPosition;
+    //ballNode->scale = glm::vec3(ballRadius);
+    //ballNode->rotation = { 0, totalElapsedTime*2, 0 };
 
-    padNode->position  = {
+    /*padNode->position  = {
         boxNode->position.x - (boxDimensions.x/2) + (padDimensions.x/2) + (1 - padPositionX) * (boxDimensions.x - padDimensions.x),
         boxNode->position.y - (boxDimensions.y/2) + (padDimensions.y/2),
         boxNode->position.z - (boxDimensions.z/2) + (padDimensions.z/2) + (1 - padPositionZ) * (boxDimensions.z - padDimensions.z)
-    };
+    };*/
 
     updateNodeTransformations(rootNode, VP);
-
-
 }
 
 void updateNodeTransformations(SceneNode* node, glm::mat4 transformationThusFar) {

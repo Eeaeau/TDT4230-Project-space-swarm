@@ -109,6 +109,16 @@ std::map<int, GLuint> GLModel::bindMesh(std::map<int, GLuint> vbos,
                     accessor.normalized ? GL_TRUE : GL_FALSE,
                     byteStride, BUFFER_OFFSET(accessor.byteOffset));
 
+                if (instancing > 1) {
+                    // Shader Storage Buffer Object
+                    glGenBuffers(1, &ssboModelMatrices);
+                    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboModelMatrices);
+
+                    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(glm::mat4) * instanceMatrix.size(), instanceMatrix.data(), GL_STATIC_DRAW);
+                    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssboModelMatrices);
+                    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+                }
+
             }
             else
                 std::cout << "vaa missing: " << attrib.first << std::endl;

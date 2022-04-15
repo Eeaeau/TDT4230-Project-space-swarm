@@ -15,18 +15,10 @@ layout(std430, binding = 0) buffer modelMatrices
 
 uniform mat4 MVP;
 uniform mat4 viewProjectionMatrix;
-//uniform mat4 instanceMatrix;
 uniform mat3 normalMatrix;
 uniform mat4 modelViewMatrix;
 uniform mat4 modelMatrix;
 //uniform vec3 viewPos;
-
-
-//out layout(location = 0) vec3 normal_out;
-//out layout(location = 1) vec2 textureCoordinates_out;
-//out layout(location = 4) vec3 fragPos;
-//out layout(location = 5) mat3 TBN;
-//out layout(location = 9) vec3 tangent_out;
 
 out vec3 normal;
 out vec2 textureCoordinates;

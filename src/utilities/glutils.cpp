@@ -172,6 +172,7 @@ GLuint generateInctancedBuffer2(Mesh& mesh, const std::vector<glm::mat4>& modelM
     GLuint ssboModelMatrices;
     glGenBuffers(1, &ssboModelMatrices);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboModelMatrices);
+
     glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(glm::mat4) * modelMatrices.size(), modelMatrices.data(), GL_STATIC_DRAW);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssboModelMatrices);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
