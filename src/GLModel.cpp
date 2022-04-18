@@ -15,13 +15,14 @@ void linkAttrib(GLuint layout, GLuint numComponents, GLenum type, GLsizeiptr str
     //glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-GLModel::GLModel(const char* filename, unsigned int instancing, std::vector<glm::mat4> instanceMatrix)
+GLModel::GLModel(const char* filename, unsigned int instancing, std::vector<glm::mat4> instanceMatrices)
 {
     loadModel(filename);
     this->instancing = instancing;
-    this->instanceMatrix = instanceMatrix;
-    //this->vaos = std::vector<GLuint>(instancing);
+    this->instanceMatrices = instanceMatrices;
+    this->VAOs = std::vector<GLuint>(instancing);
     bindModel();
+    std::cout << "ehm" << std::endl;
 }
 
 bool GLModel::loadModel(const char* filename)
@@ -114,7 +115,7 @@ std::map<int, GLuint> GLModel::bindMesh(std::map<int, GLuint> vbos,
                     glGenBuffers(1, &ssboModelMatrices);
                     glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboModelMatrices);
 
-                    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(glm::mat4) * instanceMatrix.size(), instanceMatrix.data(), GL_STATIC_DRAW);
+                    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(glm::mat4) * instanceMatrices.size(), instanceMatrices.data(), GL_STATIC_DRAW);
                     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssboModelMatrices);
                     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
                 }
@@ -200,7 +201,7 @@ void GLModel::bindModelNodes(std::map<int, GLuint> vbos, tinygltf::Model& model,
     tinygltf::Node& node) {
     if ((node.mesh >= 0) && (node.mesh < model.meshes.size())) {
 
-
+        VAOs.push_back(VAO);
 
         bindMesh(vbos, model, model.meshes[node.mesh]);
     }
@@ -211,26 +212,26 @@ void GLModel::bindModelNodes(std::map<int, GLuint> vbos, tinygltf::Model& model,
     }
 }
 
-std::vector<GLuint> GLModel::bindModel() {
+GLuint GLModel::bindModel() {
     /*for (size_t i = 0; i < vaos.size(); ++i) {
     }*/
-        
+    //VAOs = std::vector<GLuint>();
 
-        glGenVertexArrays(1, &this->VAO);
-        glBindVertexArray(this->VAO);
+    glGenVertexArrays(1, &this->VAO);
+    glBindVertexArray(this->VAO);
 
-        const tinygltf::Scene& scene = this->scenes[this->defaultScene];
-        for (size_t i = 0; i < scene.nodes.size(); ++i) {
-            assert((scene.nodes[i] >= 0) && (scene.nodes[i] < this->nodes.size()));
-            bindModelNodes(VBOs, *this, this->nodes[scene.nodes[i]]);
-        }
+    const tinygltf::Scene& scene = this->scenes[this->defaultScene];
+    for (size_t i = 0; i < scene.nodes.size(); ++i) {
+        assert((scene.nodes[i] >= 0) && (scene.nodes[i] < this->nodes.size()));
+        bindModelNodes(VBOs, *this, this->nodes[scene.nodes[i]]);
+    }
 
-        glBindVertexArray(0);
-        // cleanup vbos
-        for (size_t i = 0; i < VBOs.size(); ++i) {
-            glDeleteBuffers(1, &VBOs[i]);
-        }
-    return this->VAOs;
+    glBindVertexArray(0);
+    // cleanup vbos
+    for (size_t i = 0; i < VBOs.size(); ++i) {
+        glDeleteBuffers(1, &VBOs[i]);
+    }
+    return this->VAO;
 }
 
 
@@ -322,21 +323,21 @@ void GLModel::drawModel(Gloom::Shader* shader) {
 }
 
 
-void GLModel::updateInstanceMatrix(std::vector<glm::mat4> newInstanceMatrix) {
+void GLModel::updateInstanceMatrix(std::vector<glm::mat4> newInstanceMatrices) {
 
- //   glBindVertexArray(VAO);
+    glBindVertexArray(VAO);
 
- ///*   for (size_t i = 0; i < vaos.size(); ++i) {
- //       
- //   }*/
+ /*   for (size_t i = 0; i < vaos.size(); ++i) {
+        
+    }*/
 
- //   // Shader Storage Buffer Object
- //   glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboModelMatrices);
- //   glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(glm::mat4) * newInstanceMatrix.size(), newInstanceMatrix.data(), GL_STATIC_DRAW);
- //   glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssboModelMatrices);
- //   glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+    // Shader Storage Buffer Object
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboModelMatrices);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(glm::mat4) * newInstanceMatrices.size(), newInstanceMatrices.data(), GL_STATIC_DRAW);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssboModelMatrices);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
- //   glBindVertexArray(0);
+    glBindVertexArray(0);
 }
 
 

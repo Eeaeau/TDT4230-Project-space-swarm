@@ -7,11 +7,13 @@
 #include <SFML/Audio/SoundBuffer.hpp>
 #include <utilities/shader.hpp>
 #include <glm/vec3.hpp>
+
 #include <iostream>
 #include <utilities/timeutils.h>
 #include <utilities/mesh.h>
 #include <utilities/shapes.h>
-#include <utilities/glutils.h>
+#include <utilities/transformUtils.hpp>
+
 #include <SFML/Audio/Sound.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -20,7 +22,8 @@
 #define GLM_ENABLE_EXPERIMENTAL
 
 #include <glm/gtx/transform.hpp>
-
+#include <glm/gtx/matrix_decompose.hpp>
+#include <utilities/glutils.h>
 #include "utilities/imageLoader.hpp"
 #include "utilities/glfont.h"
 
@@ -99,6 +102,11 @@ float cameraHeight = 10;
 glm::vec3 cameraPosition = glm::vec3(0, cameraHeight, -20);
 glm::mat4 orthoProject;
 
+glm::vec3 cursorPosition;
+glm::vec3 cursorProjectedPosition;
+
+glm::mat4 VP;
+
 GLuint rectVAO, rectVBO;
 
 CommandLineOptions options;
@@ -127,6 +135,8 @@ void mouseCallback(GLFWwindow* window, double x, double y) {
     glfwGetWindowSize(window, &windowWidth, &windowHeight);
     glViewport(0, 0, windowWidth, windowHeight);
 
+    double margin = 50;
+
     double deltaX = x - lastMouseX;
     double deltaY = y - lastMouseY;
 
@@ -137,8 +147,90 @@ void mouseCallback(GLFWwindow* window, double x, double y) {
     if (padPositionX < 0) padPositionX = 0;
     if (padPositionZ > 1) padPositionZ = 1;
     if (padPositionZ < 0) padPositionZ = 0;
+    
 
-    glfwSetCursorPos(window, windowWidth / 2, windowHeight / 2);
+
+    //glfwSetCursorPos(window, windowWidth / 2, windowHeight / 2);
+
+   /* if ((x + deltaX  > windowWidth - margin || x + deltaX  < 0 + margin) || (y+ deltaY > windowHeight - margin || y + deltaY  < 0 + margin)) {
+        glfwSetCursorPos(window, lastMouseX, lastMouseY);
+    }*/
+    auto x_clamped = glm::clamp(x, 0.0 + margin, static_cast<double>(windowWidth) - margin);
+    auto y_clamped = glm::clamp(y, 0.0 + margin, static_cast<double>(windowHeight) - margin);
+
+    glfwSetCursorPos(window, x_clamped, y_clamped);
+
+    lastMouseX = x;
+    lastMouseY = y;
+}
+
+void homogeneous_to_world(glm::vec3& world, const glm::vec3& homogeneous, const glm::mat4& VP)
+{
+    glm::mat4 transform = glm::inverse(VP);
+    glm::vec4 _world = transform * glm::vec4(homogeneous, 1.0f);
+    world = glm::vec3(_world) * (1.0f / _world.w);
+}
+
+bool project_screen_onto_plane(glm::vec3& point, const glm::vec2& screen, const glm::vec3& plane_point, const glm::vec3& plane_normal, const glm::mat4& VP)
+{
+    glm::vec3 ray_origin, ray_end;
+    homogeneous_to_world(ray_origin, glm::vec3(screen, 0.0f), VP);
+    homogeneous_to_world(ray_end, glm::vec3(screen, 1.0f), VP);
+
+    glm::vec3 ray_normal = glm::normalize(ray_end - ray_origin);
+    float t = glm::dot(plane_point - ray_origin, plane_normal) / glm::dot(ray_normal, plane_normal);
+    point = ray_origin + t * ray_normal;
+
+    return t >= 0.0f;
+}
+
+void mouse_on_xy_plane(glm::vec3& mouse_world, double mouse_x, double mouse_y, int window_width, int window_height, const glm::mat4& VP)
+{
+    glm::vec2 screen;
+    screen.x = 2.0f * (float)mouse_x / (float)window_width - 1.0f;
+    screen.y = 1.0f - 2.0f * (float)mouse_y / window_height;
+    project_screen_onto_plane(mouse_world, screen, glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, 1.0f), VP);
+}
+
+void mouse_on_xz_plane(glm::vec3& mouse_world, double mouse_x, double mouse_y, int window_width, int window_height, const glm::mat4& VP)
+{
+    glm::vec2 screen;
+    screen.x = 2.0f * (float)mouse_x / (float)window_width - 1.0f;
+    screen.y = 1.0f - 2.0f * (float)mouse_y / window_height;
+    project_screen_onto_plane(mouse_world, screen, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f), VP);
+}
+
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
+{
+    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
+    {
+        int windowWidth, windowHeight;
+        glfwGetWindowSize(window, &windowWidth, &windowHeight);
+        
+        double xpos, ypos;
+        //getting cursor position
+        glfwGetCursorPos(window, &xpos, &ypos);
+
+        cursorPosition.x = 2 * (xpos / windowWidth) - 1;
+        cursorPosition.y = 2 * (ypos / windowHeight) - 1;;
+        cursorPosition.z = 0;
+        std::cout << "Cursor screen Position at (" << cursorPosition.x << " : " << cursorPosition.y << std::endl;
+
+        //cursorProjectedPosition = glm::vec3(glm::vec4(cursorPosition, 1) * glm::inverse(VP));
+
+        //glm::vec4 nearPlane = glm::vec4((xpos - windowWidth / 2) / (windowWidth / 2), -1 * (ypos - windowHeight / 2) / (windowHeight / 2), -1, 1.0);
+        //glm::vec4 farPlane = glm::vec4((xpos - windowWidth / 2) / (windowWidth / 2), -1 * (ypos - windowHeight / 2) / (windowHeight / 2), 1, 1.0);
+        //glm::vec4 nearResult = glm::inverse(VP) * nearPlane;
+        //glm::vec4 farResult = glm::inverse(VP) * farPlane;
+        //nearResult /= nearResult.w;
+        //farResult /= farResult.w;
+        //glm::vec3 dir = farResult - nearResult;
+
+        mouse_on_xz_plane(cursorProjectedPosition, xpos, ypos, windowWidth, windowHeight, VP);
+
+        std::cout << "Cursor projected Position at (" << cursorProjectedPosition.x << " : " << cursorProjectedPosition.y << " : " << cursorProjectedPosition.z << ")" << std::endl;
+        //std::(dir)
+    }
 }
 
 void keyCallback(GLFWwindow* window,
@@ -206,7 +298,7 @@ std::vector <glm::vec3> distributeOnGrid(unsigned int amount, int width, float o
 
 
 std::vector <glm::mat4> distributeOnDisc(unsigned int amount, float radius, float offset) {
-    std::vector <glm::mat4> instanceMatrix(amount);
+    std::vector <glm::mat4> instanceMatrices(amount);
     for (unsigned int i = 0; i < amount; i++)
     {
         glm::mat4 model(1);
@@ -231,13 +323,13 @@ std::vector <glm::mat4> distributeOnDisc(unsigned int amount, float radius, floa
         model = glm::scale(model, glm::vec3(scale));
 
         // 3. rotation: add random rotation around a (semi)randomly picked rotation axis vector
-        float rotAngle = (rand() % 360);
-        model = glm::rotate(model, rotAngle, glm::vec3(0.4f, 0.6f, 0.8f));
+        /*float rotAngle = (rand() % 360);
+        model = glm::rotate(model, rotAngle, glm::vec3(0.4f, 0.6f, 0.8f));*/
 
         // 4. now add to list of matrices
-        instanceMatrix[i] = model;
+        instanceMatrices[i] = model;
     }
-    return instanceMatrix;
+    return instanceMatrices;
 }
 
 
@@ -261,8 +353,9 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     orthoProject = glm::ortho(0.0f, static_cast<float>(windowWidth), 0.0f, static_cast<float>(windowHeight), nearPlane, farPlane);
     //orthoProject = glm::ortho(0.0f, 1.0f, 0.0f, 1.0f, nearPlane, farPlane);
 
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+    //glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
     glfwSetCursorPosCallback(window, mouseCallback);
+    glfwSetMouseButtonCallback(window, mouse_button_callback);
 
     glfwSetScrollCallback(window, scrollCallback);
     //glfwSetKeyCallback(window, keyCallback);
@@ -554,26 +647,26 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     float offset = 5.0;
 
 
-    auto instanceMatrix = distributeOnDisc(amount, radius, offset);
+    auto instanceMatrices = distributeOnDisc(amount, radius, offset);
     auto instancePos = distributeOnGrid(amount, amount/2, 10);
 
     ball2Node->nodeType = INCTANCED_GEOMETRY;
-    ball2Node->modelMatrices = instanceMatrix;
-    ball2Node->vertexArrayObjectID = generateInctancedBuffer2(sphere2, ball2Node->modelMatrices);
+    ball2Node->instanceMatrices = instanceMatrices;
+    ball2Node->vertexArrayObjectID = generateInctancedBuffer2(sphere2, ball2Node->instanceMatrices);
 
     testCubeNode->nodeType = INCTANCED_GEOMETRY;
-    testCubeNode->modelMatrices = instanceMatrix;
-    testCubeNode->vertexArrayObjectID = generateInctancedBuffer2(testCube, testCubeNode->modelMatrices);
+    testCubeNode->instanceMatrices = instanceMatrices;
+    testCubeNode->vertexArrayObjectID = generateInctancedBuffer2(testCube, testCubeNode->instanceMatrices);
 
     //std::string input_filename = "../res/mesh/magma_sphere/magma_sphere.gltf";
-    std::string input_filename = "../res/mesh/teapot.gltf";
+    std::string teapotPath = "../res/mesh/teapot/teapot.gltf";
 
     //bool ret = tinygltf::LoadExternalFile;
 
     bool ret = false;
 
-    GLModel teapot(input_filename.c_str());
-    GLModel teapot2(input_filename.c_str());
+    //GLModel teapot(input_filename.c_str());
+    //GLModel teapot2(input_filename.c_str());
 
     //tinygltf::Model teapotModel;
 
@@ -582,33 +675,34 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     
     
     //gltfNode->vertexArrayObjectID = teapot.bindModel();
-    gltfNode->position = boxCenter;
-    gltfNode->nodeType = GLTF_GEOMETRY;
-    //gltfNode->nodeType = INCTANCED_GEOMETRY;
-    gltfNode->model = teapot2;
-    
-    //rootNode->children.push_back(gltfNode);
+    //gltfNode->position = boxCenter;
+    //gltfNode->nodeType = GLTF_GEOMETRY;
+    ////gltfNode->nodeType = INCTANCED_GEOMETRY;
+    ////gltfNode->model = teapot2;
+    //
+    ////rootNode->children.push_back(gltfNode);
 
 
-    ballNode->nodeType = GLTF_GEOMETRY;
-    ballNode->model = teapot;
+    //ballNode->nodeType = GLTF_GEOMETRY;
+    //ballNode->model = teapot;
 
     std::string magmaSpherePath = "../res/mesh/magma_sphere/magma_sphere.gltf";
 
     std::string laserPlanePath = "..res/mesh/laser_plane/laser_plane.gltf";
     std::string suzanePath = "../res/mesh/suzane/suzane.gltf";
     std::string shipPath = "..res/mesh/MC90/MC90.gltf";
+    std::string markerPath = "..res/mesh/marker/marker.gltf";
 
-    magmaSphere->modelMatrices = instanceMatrix;
-    magmaSphere->model = GLModel(magmaSpherePath.c_str(), amount, magmaSphere->modelMatrices);
+    magmaSphere->instanceMatrices = instanceMatrices;
+    magmaSphere->model = GLModel(magmaSpherePath.c_str(), amount, magmaSphere->instanceMatrices);
     magmaSphere->nodeType = GLTF_GEOMETRY;
-    magmaSphere->position = boxCenter+glm::vec3(0,2,0);
+    //magmaSphere->position = boxCenter+glm::vec3(0,2,0);
     magmaSphere->scale= glm::vec3(3);
     rootNode->children.push_back(magmaSphere);
     
     
     //magmaSphere->modelMatrices = instanceMatrix;
-    //shipNode->model = GLModel(suzanePath.c_str());
+    //shipNode->model = GLModel(markerPath.c_str());
     //shipNode->nodeType = GLTF_GEOMETRY;
     //shipNode->position = boxCenter+glm::vec3(0,2,0);
     //shipNode->scale= glm::vec3(3);
@@ -622,7 +716,7 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
 }
 
 void updateFrame(GLFWwindow* window) {
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    //glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     double timeDelta = getTimeDeltaSeconds();
     double fractionFrameComplete;
 
@@ -716,13 +810,33 @@ void updateFrame(GLFWwindow* window) {
 
             testCubeNode->rotation.y += timeDelta*0.1;
 
-            magmaSphere->rotation.y += timeDelta*0.01;
+            //magmaSphere->rotation.y += timeDelta*0.01;
 
-            for (auto& matrix : magmaSphere->modelMatrices) {
-                matrix *= glm::rotate(static_cast<float>(timeDelta), glm::vec3(0, 1, 0));
+            //magmaSphere->setPoint = glm::vec3(100.0f*glm::sin(gameElapsedTime), 0, 100.0f * glm::sin(gameElapsedTime+3.14f/2));
+
+            //auto cursorProjectedPosition = cursorPosition;
+
+            magmaSphere->setPoint = cursorProjectedPosition;
+
+            for (auto& transformation : magmaSphere->instanceMatrices) {
+                //transformation *= glm::rotate(static_cast<float>(timeDelta), glm::vec3(0, 1, 0));
+                //glm::mat4 transformation; // your transformation matrix.
+                glm::vec3 scale;
+                glm::quat rotation;
+                glm::vec3 translation;
+                glm::vec3 skew;
+                glm::vec4 perspective;
+                glm::decompose(transformation, scale, rotation, translation, skew, perspective);
+                
+                auto dist = magmaSphere->setPoint - translation;
+                auto dir = glm::normalize(dist);
+
+                transformation = glm::translate(transformation, 1.0f * static_cast<float>(timeDelta) * dir * (0.1f + glm::length(dist)));
+                //transformation = glm::translate(transformation, glm::vec3(1.0f,0,0) );
+                //transformation = glm::composeTransform(scale, rotation, translation + dir * (1.0f+glm::length(dist)), glm::vec3(0), glm::vec4(0), glm::vec3(0));
             }
 
-            magmaSphere->model.updateInstanceMatrix(magmaSphere->modelMatrices);
+            magmaSphere->model.updateInstanceMatrix(magmaSphere->instanceMatrices);
 
             //double ballYCoord;
 
@@ -799,7 +913,7 @@ void updateFrame(GLFWwindow* window) {
         cameraPosition += rightDirection * static_cast<float>(timeDelta) * speed;
     }
 
-    cameraPosition[1] = cameraHeight;
+    cameraPosition.y = cameraHeight;
     
 
     // ----------------------------------------------------------------------------------------- //
@@ -833,12 +947,10 @@ void updateFrame(GLFWwindow* window) {
     ViewMatrix = glm::lookAt(
         cameraPosition,           // Camera is here
         cameraPosition + cameraFaceDirection, // and looks here : at the same position, plus "direction"
-        up                  // Head is up (set to 0,-1,0 to look upside-down)
+        up                  // Head is up
     );
 
-    glm::mat4 VP = projection * ViewMatrix;
-
-    
+    VP = projection * ViewMatrix;
 
 
     // Move and rotate various SceneNodes
@@ -858,15 +970,14 @@ void updateFrame(GLFWwindow* window) {
 }
 
 void updateNodeTransformations(SceneNode* node, glm::mat4 transformationThusFar) {
-    glm::mat4 transformationMatrix =
-              glm::translate(node->position)
+    glm::mat4 transformationMatrix = glm::composeTransform(node->scale, node->rotation, node->position, glm::vec3(0), glm::vec4(0), node->referencePoint);
+            /*  glm::translate(node->position)
             * glm::translate(node->referencePoint)
             * glm::rotate(node->rotation.y, glm::vec3(0,1,0))
             * glm::rotate(node->rotation.x, glm::vec3(1,0,0))
             * glm::rotate(node->rotation.z, glm::vec3(0,0,1))
             * glm::scale(node->scale)
-            * glm::translate(-node->referencePoint);
-
+            * glm::translate(-node->referencePoint);*/
     node->modelMatrix = transformationMatrix; // M
     node->modelViewMatrix = ViewMatrix * transformationMatrix; // MV
     node->viewProjectionMatrix = projection * ViewMatrix; // MV
@@ -948,7 +1059,7 @@ void renderNode(SceneNode* node) {
             if (node->vertexArrayObjectID != -1) {
                 glBindVertexArray(node->vertexArrayObjectID);
                 glDrawElementsInstanced(
-                    GL_TRIANGLES, node->VAOIndexCount, GL_UNSIGNED_INT, 0, node->modelMatrices.size()
+                    GL_TRIANGLES, node->VAOIndexCount, GL_UNSIGNED_INT, 0, node->instanceMatrices.size()
                 );
                 glBindVertexArray(0);
             }

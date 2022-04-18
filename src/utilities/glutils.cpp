@@ -78,9 +78,9 @@ unsigned int& generateBuffer(Mesh &mesh, unsigned int amount) {
 //    return VAOs;
 //}
 
-GLuint generateInctancedBuffer(Mesh &mesh, const std::vector<glm::mat4>& modelMatrices) {
+GLuint generateInctancedBuffer(Mesh &mesh, const std::vector<glm::mat4>& instanceMatrices) {
  
-    int amount = modelMatrices.size();
+    int amount = instanceMatrices.size();
 
     
 
@@ -93,7 +93,7 @@ GLuint generateInctancedBuffer(Mesh &mesh, const std::vector<glm::mat4>& modelMa
     unsigned int buffer;
     glGenBuffers(1, &buffer);
     glBindBuffer(GL_ARRAY_BUFFER, buffer);
-    glBufferData(GL_ARRAY_BUFFER, amount * mat4Size, modelMatrices.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, amount * mat4Size, instanceMatrices.data(), GL_STATIC_DRAW);
 
 
     auto VAO = generateBuffer(mesh);
@@ -157,9 +157,9 @@ GLuint generateInctancedBuffer(Mesh& mesh, const std::vector<glm::vec3>& modelPo
     return VAO;
 }
 
-GLuint generateInctancedBuffer2(Mesh& mesh, const std::vector<glm::mat4>& modelMatrices) {
+GLuint generateInctancedBuffer2(Mesh& mesh, const std::vector<glm::mat4>& instanceMatrices) {
 
-    const GLuint amount = modelMatrices.size();
+    const GLuint amount = instanceMatrices.size();
     auto VAO = generateBuffer(mesh);
     glBindVertexArray(VAO);
 
@@ -173,7 +173,7 @@ GLuint generateInctancedBuffer2(Mesh& mesh, const std::vector<glm::mat4>& modelM
     glGenBuffers(1, &ssboModelMatrices);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboModelMatrices);
 
-    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(glm::mat4) * modelMatrices.size(), modelMatrices.data(), GL_STATIC_DRAW);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(glm::mat4) * instanceMatrices.size(), instanceMatrices.data(), GL_STATIC_DRAW);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssboModelMatrices);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 

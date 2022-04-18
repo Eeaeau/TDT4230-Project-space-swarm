@@ -26,6 +26,7 @@ enum SceneNodeType {
 struct SceneNode {
 	SceneNode() {
 		position = glm::vec3(0, 0, 0);
+		setPoint = glm::vec3(0, 0, 0);
 		rotation = glm::vec3(0, 0, 0);
 		scale = glm::vec3(1, 1, 1);
 
@@ -44,7 +45,6 @@ struct SceneNode {
 		linear = 0.009;
 		quadratic = 0.0032;
 
-
 		//diffuseTexture = loadPNGFile("../res/textures/normal-map-debug.png");
 		//normalTexture = loadPNGFile("../res/textures/normal-map-debug.png");
 	}
@@ -60,6 +60,7 @@ struct SceneNode {
 	
 	// The node's position and rotation relative to its parent
 	glm::vec3 position;
+	glm::vec3 setPoint;
 	glm::vec3 rotation;
 	glm::vec3 scale;
 
@@ -69,7 +70,7 @@ struct SceneNode {
 
 	// The Model matrix for preserving angles is needed
 	glm::mat4 modelMatrix;
-	std::vector<glm::mat4> modelMatrices;
+	std::vector<glm::mat4> instanceMatrices;
 	glm::mat4 modelViewMatrix;
 
 	// Transforms

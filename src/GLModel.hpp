@@ -16,10 +16,11 @@ class GLModel : public tinygltf::Model
 {
 public:
     GLModel() = default;
-    GLModel(const char* filename, unsigned int instancing = 1, std::vector<glm::mat4> instanceMatrix = {});
+    GLModel(const char* filename, unsigned int instancing = 1, std::vector<glm::mat4> instanceMatrices = {});
 
     //tinygltf::Model model;
-    std::vector<GLuint> bindModel();
+    //std::vector<GLuint> bindModel();
+    GLuint bindModel();
     
     void drawModel(Gloom::Shader *shader);
     //void drawModel(GLuint vao);
@@ -41,7 +42,7 @@ private:
     std::map<int, GLuint> textureIDs;
 
     //std::vector<glm::mat4> matricesMeshes;
-    std::vector<glm::mat4> instanceMatrix;
+    std::vector<glm::mat4> instanceMatrices;
     std::map<int, GLuint> bindMesh(std::map<int, GLuint> vbos,
         tinygltf::Model& model, tinygltf::Mesh& mesh);
 
