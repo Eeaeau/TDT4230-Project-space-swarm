@@ -51,16 +51,8 @@ unsigned int previousKeyFrame = 0;
 SceneNode* rootNode;
 SceneNode* gltfNode;
 SceneNode* laserNode;
-SceneNode* boxNode;
 SceneNode* testCubeNode;
-SceneNode* ballNode;
-SceneNode* ball2Node;
 SceneNode* markerNode;
-SceneNode* ballLightNode;
-SceneNode* staticLightNode;
-SceneNode* staticLightNode2;
-SceneNode* staticLightNode3;
-SceneNode* animatedLightNode;
 SceneNode* textureAtlasNode;
 SceneNode* textEmptyNode;
 SceneNode* magmaSphere;
@@ -408,8 +400,6 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     blurShader->activate();
     glUniform1i(blurShader->getUniformFromName("screenTexture"), 1);
 
- 
-
     // Prepare framebuffer rectangle VBO and VAO
     glGenVertexArrays(1, &rectVAO);
     glGenBuffers(1, &rectVBO);
@@ -512,88 +502,20 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     gltfNode = createSceneNode();
     magmaSphere = createSceneNode();
     shipNode = createSceneNode();
-    boxNode  = createSceneNode();
+
     testCubeNode = createSceneNode();
-    testCubeNode->position = boxCenter+glm::vec3(0);
     markerNode  = createSceneNode();
-    ballNode = createSceneNode();
-    ball2Node = createSceneNode();
-    //ball2Node->position = boxCenter;
     textureAtlasNode = createSceneNode();
-    //textureAtlasNode->position = glm::vec3(0, 0, -80);
     textureAtlasNode->position = boxCenter;
 
     textEmptyNode = createSceneNode();
     textEmptyNode->position = boxCenter;
 
     laserNode = createSceneNode();
-    
-    ballLightNode = createSceneNode();
-    ballLightNode->nodeType = POINT_LIGHT;
-    ballLightNode->lightColor = glm::vec3(10, 10, 10);
-    //ballLightNode->lightColor = glm::vec3(8);
-
-    staticLightNode = createSceneNode();
-    staticLightNode->nodeType = POINT_LIGHT;
-    staticLightNode->lightColor = glm::vec3(16,0,0);
-    staticLightNode->position= glm::vec3(-5,0,0);
-    
-    staticLightNode2 = createSceneNode();
-    staticLightNode2->nodeType = POINT_LIGHT;
-    staticLightNode2->lightColor = glm::vec3(0,16,0);
-    staticLightNode2->position= glm::vec3(0,0,50);
-    //staticLightNode2->lightColor = glm::vec3(8);
-     
-    staticLightNode3 = createSceneNode();
-    staticLightNode3->nodeType = POINT_LIGHT;
-    staticLightNode3->lightColor = glm::vec3(0,0,16);
-    staticLightNode3->position = glm::vec3(5,0,0);
-
-
-
-    //animatedLightNode = createSceneNode();
-    //animatedLightNode->nodeType = POINT_LIGHT;
-    //animatedLightNode->position = glm::vec3(0, 0, 1);
-    //animatedLightNode->lightColor = glm::vec3(5, 0, 0);
-    //animatedLightNode->lightColor = glm::vec3(8);
-
-    // attatch to scene graph
-    //rootNode->children.push_back(boxNode);
-
-    //rootNode->children.push_back(padNode);
-
-    //rootNode->children.push_back(ballNode);
-    //padNode->children.push_back(ball2Node);
-
-    //rootNode->children.push_back(textureAtlasNode);
-    //rootNode->children.push_back(textEmptyNode);
-  /*  ballNode->children.push_back(ballLightNode);
-    rootNode->children.push_back(staticLightNode);
-    rootNode->children.push_back(staticLightNode2);
-    rootNode->children.push_back(staticLightNode3);*/
-    //padNode->children.push_back(animatedLightNode);
-    //rootNode->children.push_back(testCubeNode);
-    
-    
-    //ballNode->children.push_back(lightSources[0]);
-    //lightSources[0]->position = glm::vec3(0, 0, 2);
-    //rootNode->children.push_back(lightSources[1]);
-    //padNode->children.push_back(lightSources[2]);
 
     // assign VAO
-    boxNode->vertexArrayObjectID  = boxVAO;
-    boxNode->VAOIndexCount        = box.indices.size();
 
     testCubeNode->VAOIndexCount = testCube.indices.size();
-
-    //padNode->vertexArrayObjectID  = padVAO;
-    //padNode->VAOIndexCount        = pad.indices.size();
-
-    ballNode->vertexArrayObjectID = ballVAO;
-    ballNode->VAOIndexCount = sphere.indices.size();
-    
-    //ball2Node->vertexArrayObjectID = ball2VAO;
-    ball2Node->VAOIndexCount       = sphere.indices.size();
 
     textureAtlasNode->vertexArrayObjectID = textVAO;
     textureAtlasNode->VAOIndexCount = textMesh.indices.size();
@@ -612,48 +534,15 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     //textEmptyNode->diffuseTexture = loadPNGFile("../res/textures/charmap.png");
     unsigned int emptyDiffuseID = generateTexture(textureAtlasNode->diffuseTexture, false);
     textEmptyNode->diffuseTextureID = emptyDiffuseID;
-
-
-
-    boxNode->nodeType = TEXTURED_GEOMETRY;
-    boxNode->diffuseTexture= loadPNGFile("../res/textures/Brick03_col.png");
-    boxNode->normalTexture = loadPNGFile("../res/textures/Brick03_nrm.png");
-    boxNode->roughnessTexture = loadPNGFile("../res/textures/Brick03_rgh.png");
-
-    //boxNode->diffuseTexture = brickDiffuse;
-    //boxNode->normalTexture = brickNormal;
-
-    unsigned int brickDiffuseID = generateTexture(boxNode->diffuseTexture, false);
-    boxNode->diffuseTextureID = brickDiffuseID;
-    unsigned int brickNormalID = generateTexture(boxNode->normalTexture, false);
-    boxNode->normalTextureID = brickNormalID;    
-    unsigned int roughnessTextureID = generateTexture(boxNode->roughnessTexture, false);
-    boxNode->roughnessTextureID = roughnessTextureID;
-    
-
-    //auto textAtlas = loadPNGFile("../res/textures/charmap.png");
-    //unsigned int textAtlasID = generateTexture(textAtlas, true);
-
-
-    //textureAtlasNode->diffuseTextureID = textAtlasID;
-    //textureAtlasNode->normalTextureID = brickNormalID;
-
     
     unsigned int amount = 2000;
-    //glm::mat4* instanceMatrix = new glm::mat4[amount];
-    
 
     std::srand(glfwGetTime()); // initialize random seed	
     float radius = 40.0;
     float offset = 5.0;
 
-
     auto instanceMatrices = distributeOnDisc(amount, radius, offset);
     auto instancePos = distributeOnGrid(amount, amount/2, 10);
-
-    //ball2Node->nodeType = INCTANCED_GEOMETRY;
-    //ball2Node->instanceMatrices = instanceMatrices;
-    //ball2Node->vertexArrayObjectID = generateInctancedBuffer2(sphere2, ball2Node->instanceMatrices);
 
     //testCubeNode->nodeType = INCTANCED_GEOMETRY;
     //testCubeNode->instanceMatrices = instanceMatrices;
@@ -661,31 +550,6 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
 
     //std::string input_filename = "../res/mesh/magma_sphere/magma_sphere.gltf";
     std::string teapotPath = "../res/mesh/teapot/teapot.gltf";
-
-    //bool ret = tinygltf::LoadExternalFile;
-
-    bool ret = false;
-
-    //GLModel teapot(input_filename.c_str());
-    //GLModel teapot2(input_filename.c_str());
-
-    //tinygltf::Model teapotModel;
-
-    //teapot.model = teapotModel;
-    //if (!loadModel(teapot, input_filename.c_str())) return;
-    
-    
-    //gltfNode->vertexArrayObjectID = teapot.bindModel();
-    //gltfNode->position = boxCenter;
-    //gltfNode->nodeType = GLTF_GEOMETRY;
-    ////gltfNode->nodeType = INCTANCED_GEOMETRY;
-    ////gltfNode->model = teapot2;
-    //
-    ////rootNode->children.push_back(gltfNode);
-
-
-    //ballNode->nodeType = GLTF_GEOMETRY;
-    //ballNode->model = teapot;
 
     std::string magmaSpherePath = "../res/mesh/magma_sphere/marker.gltf";
 
@@ -1030,13 +894,13 @@ void renderNode(SceneNode* node) {
     //std::string numSprite = std::to_string(0);
     //std::string numPBR = std::to_string(0);
     switch(node->nodeType) {
-        case GEOMETRY:
-            phongShader->activate();
-            if(node->vertexArrayObjectID != -1) {
-                glBindVertexArray(node->vertexArrayObjectID);
-                glDrawElements(GL_TRIANGLES, node->VAOIndexCount, GL_UNSIGNED_INT, nullptr);
-            }
-            break;
+        //case GEOMETRY:
+        //    phongShader->activate();
+        //    if(node->vertexArrayObjectID != -1) {
+        //        glBindVertexArray(node->vertexArrayObjectID);
+        //        glDrawElements(GL_TRIANGLES, node->VAOIndexCount, GL_UNSIGNED_INT, nullptr);
+        //    }
+        //    break;
 
         case GLTF_GEOMETRY:
             pbrShader->activate();
@@ -1080,25 +944,6 @@ void renderNode(SceneNode* node) {
             //}
             //break;
         
-        
-        case TEXTURED_GEOMETRY:
-            phongShader->activate();
-
-            //glUniform1i(phongShader->getUniformFromName("useTexture"), 1);
-            glBindTextureUnit(0, node->diffuseTextureID);
-            glBindTextureUnit(1, node->normalTextureID);
-            glBindTextureUnit(2, node->roughnessTextureID);
-            
-        /*    glBindTextureUnit(phongShader->getUniformFromName("texture_in.diffuse"), node->diffuseTextureID);
-            glBindTextureUnit(phongShader->getUniformFromName("texture_in.normal"), node->normalTextureID);*/
-
-            if (node->vertexArrayObjectID != -1) {
-                glBindVertexArray(node->vertexArrayObjectID);
-                glDrawElements(GL_TRIANGLES, node->VAOIndexCount, GL_UNSIGNED_INT, nullptr);
-            }
-
-            glUniform1i(phongShader->getUniformFromName("useTexture"), 0);
-            break;
         case OVERLAY: 
             overlayShader->activate();
             // Common uniforms for overlay phongShader 
@@ -1181,8 +1026,8 @@ void renderFrame(GLFWwindow* window) {
     phongShader->activate();
     glUniform3fv(phongShader->getUniformFromName("viewPos"), 1, glm::value_ptr(cameraPosition));
     glUniform3fv(phongShader->getUniformFromName("lightTest"), 1, glm::value_ptr(glm::vec3(1, 0, 0)));
-    auto ballPos = glm::vec3(ballNode->modelMatrix * glm::vec4(0.0, 0.0, 0.0, 1.0));
-    glUniform3fv(phongShader->getUniformFromName("ballPos"), 1, glm::value_ptr(ballPos));
+    //auto ballPos = glm::vec3(ballNode->modelMatrix * glm::vec4(0.0, 0.0, 0.0, 1.0));
+    //glUniform3fv(phongShader->getUniformFromName("ballPos"), 1, glm::value_ptr(ballPos));
 
     int windowWidth, windowHeight;
     glfwGetWindowSize(window, &windowWidth, &windowHeight);
