@@ -555,7 +555,7 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     std::string magmaSpherePath = "../res/mesh/gltf/magma_sphere.gltf";
     std::string markerPath = "../res/mesh/misc/marker.gltf";
     std::string laserPlanePath = "../res/mesh/misc/laser_plane.gltf";
-    std::string shipPath = "../res/mesh/misc/UFO.gltf";
+    std::string shipPath = "../res/mesh/misc/UFO2.gltf";
 
     //std::string markerPath = "..res/mesh/marker/marker.gltf";
 
@@ -703,7 +703,7 @@ void updateFrame(GLFWwindow* window) {
                 
                 spreadContribution /= magmaSphereNode->instanceMatrices.size();;
 
-                transformation = glm::translate(transformation, 0.1f*spreadContribution + 1.0f * static_cast<float>(timeDelta) * dir * (0.5f + glm::min(glm::length(dist), 2.0f)));
+                transformation = glm::translate(transformation, 0.0f*spreadContribution + 1.0f * static_cast<float>(timeDelta) * dir * (0.5f + glm::min(glm::length(dist), 2.0f)));
                 
                 
                 //meanPos.push_back(translation);

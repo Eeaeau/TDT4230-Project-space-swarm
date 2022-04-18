@@ -355,7 +355,7 @@ void GLModel::updateInstanceMatrix(std::vector<glm::mat4> newInstanceMatrices) {
  /*   for (size_t i = 0; i < vaos.size(); ++i) {
         
     }*/
-
+    instancing = newInstanceMatrices.size();
     // Shader Storage Buffer Object
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboModelMatrices);
     glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(glm::mat4) * newInstanceMatrices.size(), newInstanceMatrices.data(), GL_STATIC_DRAW);
