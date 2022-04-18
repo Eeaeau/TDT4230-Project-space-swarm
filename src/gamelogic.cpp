@@ -55,7 +55,7 @@ SceneNode* testCubeNode;
 SceneNode* markerNode;
 SceneNode* textureAtlasNode;
 SceneNode* textEmptyNode;
-SceneNode* magmaSphere;
+SceneNode* magmaSphereNode;
 SceneNode* shipNode;
 
 // Create Frame Buffer Object
@@ -500,7 +500,7 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     //create scene nodes
     rootNode = createSceneNode();
     gltfNode = createSceneNode();
-    magmaSphere = createSceneNode();
+    magmaSphereNode = createSceneNode();
     shipNode = createSceneNode();
 
     testCubeNode = createSceneNode();
@@ -551,32 +551,42 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     //std::string input_filename = "../res/mesh/magma_sphere/magma_sphere.gltf";
     std::string teapotPath = "../res/mesh/teapot/teapot.gltf";
 
-    std::string magmaSpherePath = "../res/mesh/magma_sphere/marker.gltf";
+    std::string magmaSpherePath = "../res/mesh/magma_sphere/magma_sphere.gltf";
+    std::string markerPath = "../res/mesh/magma_sphere/marker.gltf";
+    std::string laserPlanePath = "../res/mesh/magma_sphere/laser_plane.gltf";
 
-    std::string laserPlanePath = "..res/mesh/laser_plane/laser_plane.gltf";
+    //std::string markerPath = "..res/mesh/marker/marker.gltf";
+
+    //std::string laserPlanePath = "..res/mesh/laser_plane/laser_plane.gltf";
     std::string suzanePath = "../res/mesh/suzane/suzane.gltf";
     std::string shipPath = "..res/mesh/MC90/MC90.gltf";
-    std::string markerPath = "..res/mesh/marker/marker.gltf";
 
-    magmaSphere->instanceMatrices = instanceMatrices;
-    magmaSphere->model = GLModel(magmaSpherePath.c_str(), amount, instanceMatrices);
-    magmaSphere->nodeType = GLTF_GEOMETRY;
+    magmaSphereNode->instanceMatrices = instanceMatrices;
+    magmaSphereNode->model = GLModel(markerPath.c_str(), amount, instanceMatrices);
+    magmaSphereNode->nodeType = GLTF_GEOMETRY;
     //magmaSphere->position = boxCenter+glm::vec3(0,2,0);
-    magmaSphere->scale= glm::vec3(3);
-    rootNode->children.push_back(magmaSphere);
+    magmaSphereNode->scale= glm::vec3(3);
+    //rootNode->children.push_back(magmaSphereNode);
     
-    
-    //magmaSphere->modelMatrices = instanceMatrix;
+
     //shipNode->model = GLModel(markerPath.c_str());
     //shipNode->nodeType = GLTF_GEOMETRY;
     //shipNode->position = boxCenter+glm::vec3(0,2,0);
     //shipNode->scale= glm::vec3(3);
     //rootNode->children.push_back(shipNode);   
     // 
- /*   magmaSphere->modelMatrices = ;
-    markerNode->nodeType = GLTF_GEOMETRY;
+
+    markerNode->instanceMatrices = instanceMatrices;
     markerNode->model = GLModel(markerPath.c_str());
-    rootNode->children.push_back(markerNode);*/
+    markerNode->scale = glm::vec3(10);
+    markerNode->nodeType = GLTF_GEOMETRY;
+    rootNode->children.push_back(markerNode);
+    
+    laserNode->instanceMatrices = instanceMatrices;
+    laserNode->model = GLModel(laserPlanePath.c_str());
+    laserNode->scale = glm::vec3(3);
+    laserNode->nodeType = GLTF_GEOMETRY;
+    rootNode->children.push_back(laserNode);
 
     std::cout << fmt::format("Initialized scene with {} SceneNodes.", totalChildren(rootNode)) << std::endl;
 
@@ -686,11 +696,11 @@ void updateFrame(GLFWwindow* window) {
 
             //auto cursorProjectedPosition = cursorPosition;
 
-            magmaSphere->setPoint = cursorProjectedPosition;
+            magmaSphereNode->setPoint = cursorProjectedPosition;
 
-            //markerNode->position = cursorProjectedPosition;
+            markerNode->position = cursorProjectedPosition;
 
-            for (auto& transformation : magmaSphere->instanceMatrices) {
+            for (auto& transformation : magmaSphereNode->instanceMatrices) {
                 //transformation *= glm::rotate(static_cast<float>(timeDelta), glm::vec3(0, 1, 0));
                 //glm::mat4 transformation; // your transformation matrix.
                 glm::vec3 scale;
@@ -700,7 +710,7 @@ void updateFrame(GLFWwindow* window) {
                 glm::vec4 perspective;
                 glm::decompose(transformation, scale, rotation, translation, skew, perspective);
                 
-                auto dist = magmaSphere->setPoint - translation;
+                auto dist = magmaSphereNode->setPoint - translation;
                 auto dir = glm::normalize(dist);
 
                 transformation = glm::translate(transformation, 1.0f * static_cast<float>(timeDelta) * dir * (0.1f + glm::length(dist)));
@@ -708,7 +718,7 @@ void updateFrame(GLFWwindow* window) {
                 //transformation = glm::composeTransform(scale, rotation, translation + dir * (1.0f+glm::length(dist)), glm::vec3(0), glm::vec4(0), glm::vec3(0));
             }
 
-            magmaSphere->model.updateInstanceMatrix(magmaSphere->instanceMatrices);
+            magmaSphereNode->model.updateInstanceMatrix(magmaSphereNode->instanceMatrices);
 
             //double ballYCoord;
 
