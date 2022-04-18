@@ -15,6 +15,7 @@
 #include <chrono>
 #include <fstream>
 #include <stdlib.h>
+#include <Ship.hpp>
 
 //#include "mesh.h"
 #include "GLModel.hpp"
@@ -98,6 +99,8 @@ struct SceneNode {
 
 	//tinygltf::Model model;
 	GLModel model;
+
+	std::vector<Ship> ships;
 };
 
 SceneNode* createSceneNode();
