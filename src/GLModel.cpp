@@ -20,7 +20,7 @@ GLModel::GLModel(const char* filename, unsigned int instancing, std::vector<glm:
     loadModel(filename);
     this->instancing = instancing;
     this->instanceMatrices = instanceMatrices;
-    this->VAOs = std::vector<GLuint>(instancing);
+    //this->VAOs = std::vector<GLuint>(instancing);
     bindModel();
     std::cout << "ehm" << std::endl;
 }
@@ -201,7 +201,7 @@ void GLModel::bindModelNodes(std::map<int, GLuint> vbos, tinygltf::Model& model,
     tinygltf::Node& node) {
     if ((node.mesh >= 0) && (node.mesh < model.meshes.size())) {
 
-        VAOs.push_back(VAO);
+        //VAOs.push_back(VAO);
 
         bindMesh(vbos, model, model.meshes[node.mesh]);
     }
@@ -241,43 +241,43 @@ void GLModel::drawMesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Gloom::Shad
         tinygltf::Primitive primitive = mesh.primitives[i];
         tinygltf::Accessor indexAccessor = model.accessors[primitive.indices];
 
-        auto primitiveMat = &materials[primitive.material];
-        
-        auto baseColor = primitiveMat->pbrMetallicRoughness.baseColorTexture.index;
-        int useNormalTexture = -1;
-        auto normalMap = primitiveMat->normalTexture.index;
-        auto emissiveFactor = primitiveMat->emissiveFactor;
-        auto roughnessMap = primitiveMat->pbrMetallicRoughness.metallicRoughnessTexture.index;
-        auto roughnessFactor = primitiveMat->pbrMetallicRoughness.roughnessFactor;
-        
+        //auto primitiveMat = &materials[primitive.material];
+        //
+        //auto baseColor = primitiveMat->pbrMetallicRoughness.baseColorTexture.index;
+        //int useNormalTexture = -1;
+        //auto normalMap = primitiveMat->normalTexture.index;
+        //auto emissiveFactor = primitiveMat->emissiveFactor;
+        //auto roughnessMap = primitiveMat->pbrMetallicRoughness.metallicRoughnessTexture.index;
+        //auto roughnessFactor = primitiveMat->pbrMetallicRoughness.roughnessFactor;
+        //
 
-        /*for (unsigned int i = 0; i < textures.size(); i++) {
+        ///*for (unsigned int i = 0; i < textures.size(); i++) {
 
 
-        }*/
-        /*for (unsigned int i = 0; i < materials.size(); i++) {
+        //}*/
+        ///*for (unsigned int i = 0; i < materials.size(); i++) {
 
-        }*/
-        glBindTextureUnit(0, textureIDs[baseColor]);
-        glBindTextureUnit(1, textureIDs[normalMap]);
-        glBindTextureUnit(2, textureIDs[roughnessMap]);
+        //}*/
+        //glBindTextureUnit(0, textureIDs[baseColor]);
+        //glBindTextureUnit(1, textureIDs[normalMap]);
+        //glBindTextureUnit(2, textureIDs[roughnessMap]);
         //glBindTextureUnit(3, textureIDs[roughnessMap]);
         //emissiveFactor
         //glUniform3fv(3, 1, glm::value_ptr(glm::vec3());
-        if (emissiveFactor.empty()) {
+       /* if (emissiveFactor.empty()) {
             emissiveFactor = { 0, 0, 0};
         }
 
         useNormalTexture = 1;
         if (useNormalTexture) {
-        }
+        }*/
 
         //glUniform3f(3, static_cast<GLfloat>(emissiveFactor[0]), static_cast<GLfloat>(emissiveFactor[1]), static_cast<GLfloat>(emissiveFactor[2]));
-        glUniform3f(shader->getUniformFromName("emissiveFactor"), static_cast<GLfloat>(emissiveFactor[0]), static_cast<GLfloat>(emissiveFactor[1]), static_cast<GLfloat>(emissiveFactor[2]));
-        glUniform1f(shader->getUniformFromName("roughnessFactor"), roughnessFactor);
+        //glUniform3f(shader->getUniformFromName("emissiveFactor"), static_cast<GLfloat>(emissiveFactor[0]), static_cast<GLfloat>(emissiveFactor[1]), static_cast<GLfloat>(emissiveFactor[2]));
+  /*      glUniform1f(shader->getUniformFromName("roughnessFactor"), roughnessFactor);
         glUniform1i(shader->getUniformFromName("useNormalTexture"), useNormalTexture);
 
-        glUniform1i(shader->getUniformFromName("useInstancing"), 0);
+        glUniform1i(shader->getUniformFromName("useInstancing"), 0);*/
         
         if (instancing == 1)
         {

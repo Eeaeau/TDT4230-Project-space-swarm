@@ -43,7 +43,7 @@ void main() {
 //	texture(normalTexture, texcoord).rgb
 	float lum = max(dot(normal, normalize(sun_position)), 0.0);
 	fragColor = texture(diffuseTexture, texcoord) * vec4((ambient + lum) * sun_color, 1.0);
-//	fragColor.rgb = normal;
+	fragColor.rgb = normal;
 
 	brightColor vec4(vec3(0), 1);
 

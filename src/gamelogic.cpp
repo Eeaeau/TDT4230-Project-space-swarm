@@ -55,7 +55,7 @@ SceneNode* boxNode;
 SceneNode* testCubeNode;
 SceneNode* ballNode;
 SceneNode* ball2Node;
-SceneNode* padNode;
+SceneNode* markerNode;
 SceneNode* ballLightNode;
 SceneNode* staticLightNode;
 SceneNode* staticLightNode2;
@@ -515,7 +515,7 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     boxNode  = createSceneNode();
     testCubeNode = createSceneNode();
     testCubeNode->position = boxCenter+glm::vec3(0);
-    padNode  = createSceneNode();
+    markerNode  = createSceneNode();
     ballNode = createSceneNode();
     ball2Node = createSceneNode();
     //ball2Node->position = boxCenter;
@@ -567,12 +567,13 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
 
     //rootNode->children.push_back(textureAtlasNode);
     //rootNode->children.push_back(textEmptyNode);
-    ballNode->children.push_back(ballLightNode);
+  /*  ballNode->children.push_back(ballLightNode);
     rootNode->children.push_back(staticLightNode);
     rootNode->children.push_back(staticLightNode2);
-    rootNode->children.push_back(staticLightNode3);
+    rootNode->children.push_back(staticLightNode3);*/
     //padNode->children.push_back(animatedLightNode);
-    rootNode->children.push_back(testCubeNode);
+    //rootNode->children.push_back(testCubeNode);
+    
     
     //ballNode->children.push_back(lightSources[0]);
     //lightSources[0]->position = glm::vec3(0, 0, 2);
@@ -585,8 +586,8 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
 
     testCubeNode->VAOIndexCount = testCube.indices.size();
 
-    padNode->vertexArrayObjectID  = padVAO;
-    padNode->VAOIndexCount        = pad.indices.size();
+    //padNode->vertexArrayObjectID  = padVAO;
+    //padNode->VAOIndexCount        = pad.indices.size();
 
     ballNode->vertexArrayObjectID = ballVAO;
     ballNode->VAOIndexCount = sphere.indices.size();
@@ -650,13 +651,13 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     auto instanceMatrices = distributeOnDisc(amount, radius, offset);
     auto instancePos = distributeOnGrid(amount, amount/2, 10);
 
-    ball2Node->nodeType = INCTANCED_GEOMETRY;
-    ball2Node->instanceMatrices = instanceMatrices;
-    ball2Node->vertexArrayObjectID = generateInctancedBuffer2(sphere2, ball2Node->instanceMatrices);
+    //ball2Node->nodeType = INCTANCED_GEOMETRY;
+    //ball2Node->instanceMatrices = instanceMatrices;
+    //ball2Node->vertexArrayObjectID = generateInctancedBuffer2(sphere2, ball2Node->instanceMatrices);
 
-    testCubeNode->nodeType = INCTANCED_GEOMETRY;
-    testCubeNode->instanceMatrices = instanceMatrices;
-    testCubeNode->vertexArrayObjectID = generateInctancedBuffer2(testCube, testCubeNode->instanceMatrices);
+    //testCubeNode->nodeType = INCTANCED_GEOMETRY;
+    //testCubeNode->instanceMatrices = instanceMatrices;
+    //testCubeNode->vertexArrayObjectID = generateInctancedBuffer2(testCube, testCubeNode->instanceMatrices);
 
     //std::string input_filename = "../res/mesh/magma_sphere/magma_sphere.gltf";
     std::string teapotPath = "../res/mesh/teapot/teapot.gltf";
@@ -686,7 +687,7 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     //ballNode->nodeType = GLTF_GEOMETRY;
     //ballNode->model = teapot;
 
-    std::string magmaSpherePath = "../res/mesh/magma_sphere/magma_sphere.gltf";
+    std::string magmaSpherePath = "../res/mesh/magma_sphere/marker.gltf";
 
     std::string laserPlanePath = "..res/mesh/laser_plane/laser_plane.gltf";
     std::string suzanePath = "../res/mesh/suzane/suzane.gltf";
@@ -694,7 +695,7 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     std::string markerPath = "..res/mesh/marker/marker.gltf";
 
     magmaSphere->instanceMatrices = instanceMatrices;
-    magmaSphere->model = GLModel(magmaSpherePath.c_str(), amount, magmaSphere->instanceMatrices);
+    magmaSphere->model = GLModel(magmaSpherePath.c_str(), amount, instanceMatrices);
     magmaSphere->nodeType = GLTF_GEOMETRY;
     //magmaSphere->position = boxCenter+glm::vec3(0,2,0);
     magmaSphere->scale= glm::vec3(3);
@@ -706,7 +707,12 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     //shipNode->nodeType = GLTF_GEOMETRY;
     //shipNode->position = boxCenter+glm::vec3(0,2,0);
     //shipNode->scale= glm::vec3(3);
-    //rootNode->children.push_back(shipNode);
+    //rootNode->children.push_back(shipNode);   
+    // 
+ /*   magmaSphere->modelMatrices = ;
+    markerNode->nodeType = GLTF_GEOMETRY;
+    markerNode->model = GLModel(markerPath.c_str());
+    rootNode->children.push_back(markerNode);*/
 
     std::cout << fmt::format("Initialized scene with {} SceneNodes.", totalChildren(rootNode)) << std::endl;
 
@@ -817,6 +823,8 @@ void updateFrame(GLFWwindow* window) {
             //auto cursorProjectedPosition = cursorPosition;
 
             magmaSphere->setPoint = cursorProjectedPosition;
+
+            //markerNode->position = cursorProjectedPosition;
 
             for (auto& transformation : magmaSphere->instanceMatrices) {
                 //transformation *= glm::rotate(static_cast<float>(timeDelta), glm::vec3(0, 1, 0));
