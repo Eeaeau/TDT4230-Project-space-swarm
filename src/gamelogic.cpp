@@ -71,7 +71,7 @@ GLuint bloomFBO;
 GLuint bloomBuffer;
 
 double ballRadius = 3.0f;
-std::vector<glm::vec3> meanPos;
+std::vector<glm::vec3> prevPos;
 
 // These are heap allocated, because they should not be initialised at the start of the program
 sf::SoundBuffer* buffer;
@@ -156,6 +156,32 @@ void mouseCallback(GLFWwindow* window, double x, double y) {
 
     lastMouseX = x;
     lastMouseY = y;
+}
+
+glm::mat4 rotationAlign(const glm::vec3& d, const glm::vec3& z)
+{
+    const glm::vec3  v = glm::cross(z, d);
+    const float c = glm::dot(z, d);
+    const float k = 1.0f / (1.0f + c);
+
+    auto trans = glm::mat4(v.x * v.x * k + c, v.y * v.x * k - v.z, v.z * v.x * k + v.y, 0,
+        v.x * v.y * k + v.z, v.y * v.y * k + c, v.z * v.y * k - v.x, 0,
+        v.x * v.z * k - v.y, v.y * v.z * k + v.x, v.z * v.z * k + c, 0,
+        0,                       0,                    0,            1);
+
+    return glm::mat4(trans);
+}
+
+glm::mat4 alignTowards(const glm::vec3& source, const glm::vec3& target, const glm::vec3& up = glm::vec3(0,1,0))
+{
+    if (target == source) {
+        return glm::mat4(1);
+    }
+    auto m_Z = glm::normalize(target - source);
+    auto m_X = glm::normalize(glm::cross(up, m_Z));
+    auto m_Y = glm::normalize(glm::cross(m_Z, m_X));
+
+    return glm::mat4(glm::vec4(m_X, 0), glm::vec4(m_Y,0), glm::vec4(m_Z,0), glm::vec4(0,0,0,1));
 }
 
 void homogeneous_to_world(glm::vec3& world, const glm::vec3& homogeneous, const glm::mat4& VP)
@@ -543,6 +569,7 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     float offset = 2.0;
 
     auto instanceMatrices = distributeOnDisc(amount, radius, offset);
+    auto instanceMatrices2 = distributeOnDisc(amount, radius, offset);
     auto instancePos = distributeOnGrid(amount, amount/2, 10);
 
     //testCubeNode->nodeType = INCTANCED_GEOMETRY;
@@ -563,7 +590,8 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     std::string suzanePath = "../res/mesh/suzane/suzane.gltf";
     //std::string shipPath = "..res/mesh/MC90/MC90.gltf";
 
-    shipNode->model = GLModel(shipPath.c_str());
+    shipNode->instanceMatrices = instanceMatrices;
+    shipNode->model = GLModel(shipPath.c_str(), amount, shipNode->instanceMatrices);
     shipNode->nodeType = GLTF_GEOMETRY;
     shipNode->scale= glm::vec3(1);
     rootNode->children.push_back(shipNode);
@@ -573,16 +601,17 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     markerNode->nodeType = GLTF_GEOMETRY;
     rootNode->children.push_back(markerNode);
     
-    laserNode->model = GLModel(laserPlanePath.c_str());
+    laserNode->instanceMatrices = std::vector<glm::mat4>(instanceMatrices2);
+    laserNode->model = GLModel(laserPlanePath.c_str(), amount, laserNode->instanceMatrices);
     laserNode->scale = glm::vec3(1);
     laserNode->nodeType = GLTF_GEOMETRY;
     rootNode->children.push_back(laserNode);
 
     magmaSphereNode->instanceMatrices = instanceMatrices;
-    magmaSphereNode->model = GLModel(magmaSpherePath.c_str(), amount, instanceMatrices);
-    //magmaSphereNode->model = GLModel(magmaSpherePath.c_str());
+    //magmaSphereNode->model = GLModel(magmaSpherePath.c_str(), amount, magmaSphereNode->instanceMatrices);
+    magmaSphereNode->model = GLModel(magmaSpherePath.c_str());
     magmaSphereNode->nodeType = GLTF_GEOMETRY;
-    //magmaSphere->position = boxCenter+glm::vec3(0,2,0);
+    magmaSphereNode->position = boxCenter+glm::vec3(0,-10,0);
     magmaSphereNode->scale = glm::vec3(1);
     sceneNode->children.push_back(magmaSphereNode);
 
@@ -674,45 +703,74 @@ void updateFrame(GLFWwindow* window) {
 
             //testCubeNode->rotation.y += timeDelta*0.1;
 
-            magmaSphereNode->setPoint = cursorProjectedPosition;
+            shipNode->setPoint = cursorProjectedPosition;
 
             markerNode->position = cursorProjectedPosition;
 
             //spread = 0;
             std::vector<glm::vec3> nextSpread;
-            for (auto& transformation : magmaSphereNode->instanceMatrices) {
+
+            for (int i = 0; i < shipNode->instanceMatrices.size(); i++) {
+
                 glm::vec3 scale;
                 glm::quat rotation;
                 glm::vec3 translation;
                 glm::vec3 skew;
                 glm::vec4 perspective;
-                glm::decompose(transformation, scale, rotation, translation, skew, perspective);
+                glm::decompose(shipNode->instanceMatrices[i], scale, rotation, translation, skew, perspective);
                 
-
-
-                auto dist = magmaSphereNode->setPoint - translation;
+                auto dist = shipNode->setPoint - translation;
                 auto dir = glm::normalize(dist);
 
                 nextSpread.push_back(translation);
 
                 glm::vec3 spreadContribution;
-                for (auto& pos : meanPos) {
-                    spreadContribution += glm::vec3 (1.0f/glm::cosh(translation.x - pos.x), 0, 1.0f / glm::cosh(translation.z - pos.z));
+                glm::vec3 closestPos;
+                float closestDist = 10000000000;
+                
+                for (int j = 0; j < prevPos.size(); j++) {
+                    if (j != i) {
+                        auto localDist = translation - prevPos[j];
+                        auto localLength = glm::length(localDist);
+
+                        if (localLength < closestDist) {
+                            closestDist = localLength;
+                            closestPos = localDist;
+                        }
+
+                        spreadContribution += glm::vec3 (1.0f/glm::cosh(localDist.x), 0, 1.0f / glm::cosh(localDist.z));
+                    }
                     //spreadContribution += 1.0f / glm::cosh(translation - pos);
                 }
-                
-                spreadContribution /= magmaSphereNode->instanceMatrices.size();;
 
-                transformation = glm::translate(transformation, 0.0f*spreadContribution + 1.0f * static_cast<float>(timeDelta) * dir * (0.5f + glm::min(glm::length(dist), 2.0f)));
+                //laserNode->instanceMatrices[i] = glm::lookAt(translation, closestPos, glm::vec3(0, 1, 0));
                 
-                
+                spreadContribution /= shipNode->instanceMatrices.size();
+
+                //magmaSphereNode->instanceMatrices[i] = glm::lookAt(translation, closestPos, glm::vec3(0, 1, 0));
+                glm::mat4 x = glm::mat4(1);
+                //x *= glm::lookAt(translation, translationk - glm::normalize(closestPos - translation), glm::vec3(0, 1, 0));
+                //glm::vec4 dirvec = glm::vec4(0.0f, 0.0f, 1.0f, 1.0f) * glm::rotate(static_cast<float>(timeDelta), glm::vec3(0.0f, 1.0f, 0.0f));
+                //magmaSphereNode->instanceMatrices[i] *= rotationAlign(glm::normalize( glm::vec3(glm::sin(static_cast<float>(timeDelta))) - translation), glm::vec3(0, 1, 0));
+                shipNode->instanceMatrices[i] *= glm::rotate(static_cast<float>(timeDelta), glm::vec3(0, 1, 0));
+                //x *= alignTowards(translation, glm::vec3(0,0,1), glm::vec3(0, 1, 0));
+                //magmaSphereNode->instanceMatrices[i] = glm::translate(x, translation);
+
+                //magmaSphereNode->instanceMatrices[i] = glm::translate(magmaSphereNode->instanceMatrices[i], 0.1f * spreadContribution 
+                //    + 1.0f 
+                //    * static_cast<float>(timeDelta) 
+                //    * dir 
+                //    * (0.5f + glm::min(glm::length(dist), 5.0f)));
+                //
+                //
                 //meanPos.push_back(translation);
             }
 
             //nextSpread /= magmaSphereNode->instanceMatrices.size();
-            meanPos = nextSpread;
+            prevPos = nextSpread;
 
-            magmaSphereNode->model.updateInstanceMatrix(magmaSphereNode->instanceMatrices);
+            shipNode->model.updateInstanceMatrix(shipNode->instanceMatrices);
+            //laserNode->model.updateInstanceMatrix(laserNode->instanceMatrices);
         }
     }
 
