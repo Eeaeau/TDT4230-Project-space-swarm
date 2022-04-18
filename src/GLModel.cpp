@@ -241,49 +241,61 @@ void GLModel::drawMesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Gloom::Shad
         tinygltf::Primitive primitive = mesh.primitives[i];
         tinygltf::Accessor indexAccessor = model.accessors[primitive.indices];
 
-        glUniform1i(shader->getUniformFromName("useDiffuseTexture"), 0);
-        glUniform1i(shader->getUniformFromName("useNormalTexture"), 0);
         glUniform1i(shader->getUniformFromName("useInstancing"), 0);
 
-        if (false) {
-            auto primitiveMat = &materials[primitive.material];
 
-            auto baseColor = primitiveMat->pbrMetallicRoughness.baseColorTexture.index;
-            int useNormalTexture = -1;
-            auto normalMap = primitiveMat->normalTexture.index;
-            auto emissiveFactor = primitiveMat->emissiveFactor;
-            auto roughnessMap = primitiveMat->pbrMetallicRoughness.metallicRoughnessTexture.index;
-            auto roughnessFactor = primitiveMat->pbrMetallicRoughness.roughnessFactor;
+        auto primitiveMat = &materials[primitive.material];
 
+        int useDiffuseTexture = -1;
+        auto baseColorTexture = primitiveMat->pbrMetallicRoughness.baseColorTexture.index;
 
-            ///*for (unsigned int i = 0; i < textures.size(); i++) {
+        int useNormalTexture = -1;
+        auto normalMap = primitiveMat->normalTexture.index;
 
+        auto emissiveFactor = primitiveMat->emissiveFactor;
+        int useEmissiveTexture = -1;
+        auto emissiveTexture = primitiveMat->emissiveTexture.index;
 
-            //}*/
-            ///*for (unsigned int i = 0; i < materials.size(); i++) {
+        auto roughnessFactor = primitiveMat->pbrMetallicRoughness.roughnessFactor;
+        int useRoughnessMap = -1;
+        auto roughnessMap = primitiveMat->pbrMetallicRoughness.metallicRoughnessTexture.index;
+            
+        if (baseColorTexture != -1) {
+            useDiffuseTexture = 1;
+            glBindTextureUnit(0, textureIDs[baseColorTexture]);
+        }
 
-            //}*/
-            glBindTextureUnit(0, textureIDs[baseColor]);
-            glBindTextureUnit(1, textureIDs[normalMap]);
-            glBindTextureUnit(2, textureIDs[roughnessMap]);
-            glBindTextureUnit(3, textureIDs[roughnessMap]);
-            //emissiveFactor
-            //glUniform3fv(3, 1, glm::value_ptr(glm::vec3());
-           /* if (emissiveFactor.empty()) {
-                emissiveFactor = { 0, 0, 0};
-            }
-
+        if (normalMap != -1) {
             useNormalTexture = 1;
-            if (useNormalTexture) {
-            }*/
+            glBindTextureUnit(1, textureIDs[normalMap]);
+        }
+        
+        if (roughnessMap != -1) {
+            useRoughnessMap = 1;
+            glBindTextureUnit(2, textureIDs[roughnessMap]);
+        }
+        
+        if (emissiveTexture != -1) {
+            useEmissiveTexture = 1;
+            glBindTextureUnit(3, textureIDs[emissiveTexture]);
+        }
 
-            //glUniform3f(3, static_cast<GLfloat>(emissiveFactor[0]), static_cast<GLfloat>(emissiveFactor[1]), static_cast<GLfloat>(emissiveFactor[2]));
-            glUniform3f(shader->getUniformFromName("emissiveFactor"), static_cast<GLfloat>(emissiveFactor[0]), static_cast<GLfloat>(emissiveFactor[1]), static_cast<GLfloat>(emissiveFactor[2]));
-            glUniform1f(shader->getUniformFromName("roughnessFactor"), roughnessFactor);
-            glUniform1i(shader->getUniformFromName("useNormalTexture"), useNormalTexture);
+        if (emissiveFactor.empty()) {
+            emissiveFactor = { 0, 0, 0};
+        }
+
+
+        //glUniform3f(3, static_cast<GLfloat>(emissiveFactor[0]), static_cast<GLfloat>(emissiveFactor[1]), static_cast<GLfloat>(emissiveFactor[2]));
+        glUniform3f(shader->getUniformFromName("emissiveFactor"), static_cast<GLfloat>(emissiveFactor[0]), static_cast<GLfloat>(emissiveFactor[1]), static_cast<GLfloat>(emissiveFactor[2]));
+        glUniform1f(shader->getUniformFromName("roughnessFactor"), roughnessFactor);
+            
+        glUniform1i(shader->getUniformFromName("useDiffuseTexture"), useDiffuseTexture);
+        glUniform1i(shader->getUniformFromName("useNormalTexture"), useNormalTexture);
+        glUniform1i(shader->getUniformFromName("useRoughnessMap"), useRoughnessMap);
+        glUniform1i(shader->getUniformFromName("useEmissiveTexture"), useEmissiveTexture);
 
             
-        }
+        
         
         if (instancing == 1)
         {

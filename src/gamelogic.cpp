@@ -71,6 +71,7 @@ GLuint bloomFBO;
 GLuint bloomBuffer;
 
 double ballRadius = 3.0f;
+std::vector<glm::vec3> meanPos;
 
 // These are heap allocated, because they should not be initialised at the start of the program
 sf::SoundBuffer* buffer;
@@ -535,7 +536,7 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     unsigned int emptyDiffuseID = generateTexture(textureAtlasNode->diffuseTexture, false);
     textEmptyNode->diffuseTextureID = emptyDiffuseID;
     
-    unsigned int amount = 2000;
+    unsigned int amount = 200;
 
     std::srand(glfwGetTime()); // initialize random seed	
     float radius = 20.0;
@@ -680,6 +681,8 @@ void updateFrame(GLFWwindow* window) {
 
             markerNode->position = cursorProjectedPosition;
 
+            //spread = 0;
+            std::vector<glm::vec3> nextSpread;
             for (auto& transformation : magmaSphereNode->instanceMatrices) {
                 glm::vec3 scale;
                 glm::quat rotation;
@@ -688,11 +691,29 @@ void updateFrame(GLFWwindow* window) {
                 glm::vec4 perspective;
                 glm::decompose(transformation, scale, rotation, translation, skew, perspective);
                 
+
+
                 auto dist = magmaSphereNode->setPoint - translation;
                 auto dir = glm::normalize(dist);
 
-                transformation = glm::translate(transformation, 1.0f * static_cast<float>(timeDelta) * dir * (0.1f + glm::length(dist)));
+                nextSpread.push_back(translation);
+
+                glm::vec3 spreadContribution;
+                for (auto& pos : meanPos) {
+                    spreadContribution += glm::vec3 (1.0f/glm::cosh(translation.x - pos.x), 0, 1.0f / glm::cosh(translation.z - pos.z));
+                    //spreadContribution += 1.0f / glm::cosh(translation - pos);
+                }
+                
+                spreadContribution /= magmaSphereNode->instanceMatrices.size();;
+
+                transformation = glm::translate(transformation, 0.1f*spreadContribution + 1.0f * static_cast<float>(timeDelta) * dir * (0.5f + glm::min(glm::length(dist), 2.0f)));
+                
+                
+                //meanPos.push_back(translation);
             }
+
+            //nextSpread /= magmaSphereNode->instanceMatrices.size();
+            meanPos = nextSpread;
 
             magmaSphereNode->model.updateInstanceMatrix(magmaSphereNode->instanceMatrices);
         }
@@ -917,11 +938,11 @@ void renderFrame(GLFWwindow* window) {
     // -------------------- Draw geo -------------------- //
     // 
     // Enable transparency
-    glEnable(GL_BLEND);
+    /*glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LESS);
+    glDepthFunc(GL_LESS);*/
 
     overlayShader->activate();
     glUniform3fv(overlayShader->getUniformFromName("viewPos"), 1, glm::value_ptr(cameraPosition));
@@ -940,7 +961,7 @@ void renderFrame(GLFWwindow* window) {
 
 
     // -------------------- Post process -------------------- //
-    glDisable(GL_BLEND);
+    //glDisable(GL_BLEND);
     glCullFace(GL_FRONT);
     
 
