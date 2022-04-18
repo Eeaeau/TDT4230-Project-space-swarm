@@ -611,8 +611,9 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     //magmaSphereNode->model = GLModel(magmaSpherePath.c_str(), amount, magmaSphereNode->instanceMatrices);
     magmaSphereNode->model = GLModel(magmaSpherePath.c_str());
     magmaSphereNode->nodeType = GLTF_GEOMETRY;
-    magmaSphereNode->position = boxCenter+glm::vec3(0,-10,0);
-    magmaSphereNode->scale = glm::vec3(1);
+    magmaSphereNode->position = glm::vec3(0,-300,-100);
+    magmaSphereNode->rotation= glm::vec3(1,0,1);
+    magmaSphereNode->scale = glm::vec3(150);
     sceneNode->children.push_back(magmaSphereNode);
 
     std::cout << fmt::format("Initialized scene with {} SceneNodes.", totalChildren(rootNode)) << std::endl;
@@ -701,7 +702,8 @@ void updateFrame(GLFWwindow* window) {
             double frameDuration = frameEnd - frameStart;
             fractionFrameComplete = elapsedTimeInFrame / frameDuration;
 
-            //testCubeNode->rotation.y += timeDelta*0.1;
+            magmaSphereNode->rotation.y += timeDelta*0.01;
+            magmaSphereNode->rotation.z += timeDelta*0.01;
 
             shipNode->setPoint = cursorProjectedPosition;
 
