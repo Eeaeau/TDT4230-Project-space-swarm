@@ -555,27 +555,24 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     std::string magmaSpherePath = "../res/mesh/gltf/magma_sphere.gltf";
     std::string markerPath = "../res/mesh/misc/marker.gltf";
     std::string laserPlanePath = "../res/mesh/misc/laser_plane.gltf";
+    std::string shipPath = "../res/mesh/misc/UFO.gltf";
 
     //std::string markerPath = "..res/mesh/marker/marker.gltf";
 
     //std::string laserPlanePath = "..res/mesh/laser_plane/laser_plane.gltf";
     std::string suzanePath = "../res/mesh/suzane/suzane.gltf";
-    std::string shipPath = "..res/mesh/MC90/MC90.gltf";
+    //std::string shipPath = "..res/mesh/MC90/MC90.gltf";
 
-    //shipNode->model = GLModel(markerPath.c_str());
-    //shipNode->nodeType = GLTF_GEOMETRY;
-    //shipNode->position = boxCenter+glm::vec3(0,2,0);
-    //shipNode->scale= glm::vec3(1);
-    //rootNode->children.push_back(shipNode);   
-    // 
+    shipNode->model = GLModel(shipPath.c_str());
+    shipNode->nodeType = GLTF_GEOMETRY;
+    shipNode->scale= glm::vec3(1);
+    rootNode->children.push_back(shipNode);
 
-    //markerNode->instanceMatrices = instanceMatrices;
     markerNode->model = GLModel(markerPath.c_str());
     markerNode->scale = glm::vec3(1);
     markerNode->nodeType = GLTF_GEOMETRY;
     rootNode->children.push_back(markerNode);
     
-    //laserNode->instanceMatrices = instanceMatrices;
     laserNode->model = GLModel(laserPlanePath.c_str());
     laserNode->scale = glm::vec3(1);
     laserNode->nodeType = GLTF_GEOMETRY;

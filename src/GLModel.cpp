@@ -22,7 +22,7 @@ GLModel::GLModel(const char* filename, unsigned int instancing, std::vector<glm:
     this->instanceMatrices = instanceMatrices;
     //this->VAOs = std::vector<GLuint>(instancing);
     bindModel();
-    std::cout << "ehm" << std::endl;
+    //std::cout << "ehm" << std::endl;
 }
 
 bool GLModel::loadModel(const char* filename)
@@ -246,6 +246,8 @@ void GLModel::drawMesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Gloom::Shad
 
         auto primitiveMat = &materials[primitive.material];
 
+        auto baseColorFactor = primitiveMat->pbrMetallicRoughness.baseColorFactor;
+
         int useDiffuseTexture = -1;
         auto baseColorTexture = primitiveMat->pbrMetallicRoughness.baseColorTexture.index;
 
@@ -283,9 +285,14 @@ void GLModel::drawMesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Gloom::Shad
         if (emissiveFactor.empty()) {
             emissiveFactor = { 0, 0, 0};
         }
+        
+        if (baseColorFactor.empty()) {
+            emissiveFactor = { 1, 1, 1, 1};
+        }
 
 
         //glUniform3f(3, static_cast<GLfloat>(emissiveFactor[0]), static_cast<GLfloat>(emissiveFactor[1]), static_cast<GLfloat>(emissiveFactor[2]));
+        glUniform4f(shader->getUniformFromName("baseColorFactor"), static_cast<GLfloat>(baseColorFactor[0]), static_cast<GLfloat>(baseColorFactor[1]), static_cast<GLfloat>(baseColorFactor[2]), static_cast<GLfloat>(baseColorFactor[3]));
         glUniform3f(shader->getUniformFromName("emissiveFactor"), static_cast<GLfloat>(emissiveFactor[0]), static_cast<GLfloat>(emissiveFactor[1]), static_cast<GLfloat>(emissiveFactor[2]));
         glUniform1f(shader->getUniformFromName("roughnessFactor"), roughnessFactor);
             

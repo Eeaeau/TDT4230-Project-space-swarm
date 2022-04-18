@@ -7,6 +7,7 @@ in vec2 texcoord;
 in mat3 TBN;
 
 //layout(location = 3) in uniform vec3 emissiveFactor;
+uniform vec4 baseColorFactor;
 uniform vec3 emissiveFactor;
 uniform int useNormalTexture;
 uniform int useDiffuseTexture;
@@ -18,6 +19,7 @@ uniform int useEmissiveTexture;
 layout(binding = 0) uniform sampler2D diffuseTexture;
 layout(binding = 1) uniform sampler2D normalTexture;
 layout(binding = 2) uniform sampler2D roughnessTexture;
+layout(binding = 3) uniform sampler2D emissiveTexture;
 
 vec3 sun_position = vec3(-1, 1, -1); 
 vec3 sun_color = vec3(2);
@@ -33,7 +35,7 @@ float fragBrightness(vec4 fragColor) {
 }
 
 vec4 emissiveColor = vec4(1);
-vec4 diffuseColor = vec4(1);
+vec4 diffuseColor = baseColorFactor;
 
 void main() {
 
@@ -46,9 +48,13 @@ void main() {
 	if (useDiffuseTexture == 1) {
 		diffuseColor = texture(diffuseTexture, texcoord);
 	}
+
 	if (useEmissiveTexture == 1) {
+		emissiveColor = texture(emissiveTexture, texcoord);
+	} 
+	else if (useEmissiveTexture == 2) {
 		emissiveColor = texture(diffuseTexture, texcoord);
-	}
+	} 
 
 
 //	float lum = max(dot(normal, normalize(sun_position)), 0.0);
