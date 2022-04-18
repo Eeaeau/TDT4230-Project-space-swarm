@@ -49,6 +49,7 @@ unsigned int currentKeyFrame = 0;
 unsigned int previousKeyFrame = 0;
 
 SceneNode* rootNode;
+SceneNode* sceneNode;
 SceneNode* gltfNode;
 SceneNode* laserNode;
 SceneNode* testCubeNode;
@@ -311,8 +312,8 @@ std::vector <glm::mat4> distributeOnDisc(unsigned int amount, float radius, floa
         model = glm::translate(model, glm::vec3(x, y, z));
 
         // 2. scale: scale between 0.05 and 0.25f
-        float scale = (rand() % 20) / 100.0f + 0.05;
-        model = glm::scale(model, glm::vec3(scale));
+        /*float scale = (rand() % 20) / 100.0f + 0.05;
+        model = glm::scale(model, glm::vec3(scale));*/
 
         // 3. rotation: add random rotation around a (semi)randomly picked rotation axis vector
         /*float rotAngle = (rand() % 360);
@@ -488,17 +489,15 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     Mesh textEmptyMesh = generateTextGeometryBuffer("               ", 39 / 29, 0.5);
 
     // ------ Fill buffers ------ //
-    unsigned int ballVAO = generateBuffer(sphere);
-    unsigned int ball2VAO = generateBuffer(sphere2);
-    unsigned int boxVAO  = generateBuffer(box);
-    
-    unsigned int padVAO  = generateBuffer(pad);
     unsigned int textVAO = generateBuffer(textMesh);
     unsigned int textEmptyVAO = generateBuffer(textEmptyMesh);
 
     // ------ Construct scene ------ //
     //create scene nodes
     rootNode = createSceneNode();
+    sceneNode = createSceneNode();
+    rootNode->children.push_back(sceneNode);
+
     gltfNode = createSceneNode();
     magmaSphereNode = createSceneNode();
     shipNode = createSceneNode();
@@ -512,6 +511,7 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     textEmptyNode->position = boxCenter;
 
     laserNode = createSceneNode();
+
 
     // assign VAO
 
@@ -538,8 +538,8 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     unsigned int amount = 2000;
 
     std::srand(glfwGetTime()); // initialize random seed	
-    float radius = 40.0;
-    float offset = 5.0;
+    float radius = 20.0;
+    float offset = 2.0;
 
     auto instanceMatrices = distributeOnDisc(amount, radius, offset);
     auto instancePos = distributeOnGrid(amount, amount/2, 10);
@@ -551,9 +551,9 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     //std::string input_filename = "../res/mesh/magma_sphere/magma_sphere.gltf";
     std::string teapotPath = "../res/mesh/teapot/teapot.gltf";
 
-    std::string magmaSpherePath = "../res/mesh/magma_sphere/magma_sphere.gltf";
-    std::string markerPath = "../res/mesh/magma_sphere/marker.gltf";
-    std::string laserPlanePath = "../res/mesh/magma_sphere/laser_plane.gltf";
+    std::string magmaSpherePath = "../res/mesh/gltf/magma_sphere.gltf";
+    std::string markerPath = "../res/mesh/misc/marker.gltf";
+    std::string laserPlanePath = "../res/mesh/misc/laser_plane.gltf";
 
     //std::string markerPath = "..res/mesh/marker/marker.gltf";
 
@@ -561,32 +561,32 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     std::string suzanePath = "../res/mesh/suzane/suzane.gltf";
     std::string shipPath = "..res/mesh/MC90/MC90.gltf";
 
-    magmaSphereNode->instanceMatrices = instanceMatrices;
-    magmaSphereNode->model = GLModel(markerPath.c_str(), amount, instanceMatrices);
-    magmaSphereNode->nodeType = GLTF_GEOMETRY;
-    //magmaSphere->position = boxCenter+glm::vec3(0,2,0);
-    magmaSphereNode->scale= glm::vec3(3);
-    //rootNode->children.push_back(magmaSphereNode);
-    
-
     //shipNode->model = GLModel(markerPath.c_str());
     //shipNode->nodeType = GLTF_GEOMETRY;
     //shipNode->position = boxCenter+glm::vec3(0,2,0);
-    //shipNode->scale= glm::vec3(3);
+    //shipNode->scale= glm::vec3(1);
     //rootNode->children.push_back(shipNode);   
     // 
 
-    markerNode->instanceMatrices = instanceMatrices;
+    //markerNode->instanceMatrices = instanceMatrices;
     markerNode->model = GLModel(markerPath.c_str());
-    markerNode->scale = glm::vec3(10);
+    markerNode->scale = glm::vec3(1);
     markerNode->nodeType = GLTF_GEOMETRY;
     rootNode->children.push_back(markerNode);
     
-    laserNode->instanceMatrices = instanceMatrices;
+    //laserNode->instanceMatrices = instanceMatrices;
     laserNode->model = GLModel(laserPlanePath.c_str());
-    laserNode->scale = glm::vec3(3);
+    laserNode->scale = glm::vec3(1);
     laserNode->nodeType = GLTF_GEOMETRY;
     rootNode->children.push_back(laserNode);
+
+    magmaSphereNode->instanceMatrices = instanceMatrices;
+    magmaSphereNode->model = GLModel(magmaSpherePath.c_str(), amount, instanceMatrices);
+    //magmaSphereNode->model = GLModel(magmaSpherePath.c_str());
+    magmaSphereNode->nodeType = GLTF_GEOMETRY;
+    //magmaSphere->position = boxCenter+glm::vec3(0,2,0);
+    magmaSphereNode->scale = glm::vec3(1);
+    sceneNode->children.push_back(magmaSphereNode);
 
     std::cout << fmt::format("Initialized scene with {} SceneNodes.", totalChildren(rootNode)) << std::endl;
 
@@ -599,17 +599,6 @@ void updateFrame(GLFWwindow* window) {
     //glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     double timeDelta = getTimeDeltaSeconds();
     double fractionFrameComplete;
-
-    //const float ballBottomY = boxNode->position.y - (boxDimensions.y/2) + ballRadius + padDimensions.y;
-    //const float ballTopY    = boxNode->position.y + (boxDimensions.y/2) - ballRadius;
-    //const float BallVerticalTravelDistance = ballTopY - ballBottomY;
-
-    //const float cameraWallOffset = 30; // Arbitrary addition to prevent ball from going too much into camera
-
-    //const float ballMinX = boxNode->position.x - (boxDimensions.x/2) + ballRadius;
-    //const float ballMaxX = boxNode->position.x + (boxDimensions.x/2) - ballRadius;
-    //const float ballMinZ = boxNode->position.z - (boxDimensions.z/2) + ballRadius;
-    //const float ballMaxZ = boxNode->position.z + (boxDimensions.z/2) - ballRadius - cameraWallOffset;
 
     if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_1)) {
         mouseLeftPressed = true;
@@ -643,9 +632,6 @@ void updateFrame(GLFWwindow* window) {
             textureAtlasNode->vertexArrayObjectID = textEmptyNode->vertexArrayObjectID;
         }
 
-       /* ballPosition.x = ballMinX + (1 - padPositionX) * (ballMaxX - ballMinX);
-        ballPosition.y = ballBottomY;
-        ballPosition.z = ballMinZ + (1 - padPositionZ) * ((ballMaxZ+cameraWallOffset) - ballMinZ);*/
     } else {
         totalElapsedTime += timeDelta;
         if(hasLost) {
@@ -688,21 +674,13 @@ void updateFrame(GLFWwindow* window) {
             double frameDuration = frameEnd - frameStart;
             fractionFrameComplete = elapsedTimeInFrame / frameDuration;
 
-            testCubeNode->rotation.y += timeDelta*0.1;
-
-            //magmaSphere->rotation.y += timeDelta*0.01;
-
-            //magmaSphere->setPoint = glm::vec3(100.0f*glm::sin(gameElapsedTime), 0, 100.0f * glm::sin(gameElapsedTime+3.14f/2));
-
-            //auto cursorProjectedPosition = cursorPosition;
+            //testCubeNode->rotation.y += timeDelta*0.1;
 
             magmaSphereNode->setPoint = cursorProjectedPosition;
 
             markerNode->position = cursorProjectedPosition;
 
             for (auto& transformation : magmaSphereNode->instanceMatrices) {
-                //transformation *= glm::rotate(static_cast<float>(timeDelta), glm::vec3(0, 1, 0));
-                //glm::mat4 transformation; // your transformation matrix.
                 glm::vec3 scale;
                 glm::quat rotation;
                 glm::vec3 translation;
@@ -714,52 +692,11 @@ void updateFrame(GLFWwindow* window) {
                 auto dir = glm::normalize(dist);
 
                 transformation = glm::translate(transformation, 1.0f * static_cast<float>(timeDelta) * dir * (0.1f + glm::length(dist)));
-                //transformation = glm::translate(transformation, glm::vec3(1.0f,0,0) );
-                //transformation = glm::composeTransform(scale, rotation, translation + dir * (1.0f+glm::length(dist)), glm::vec3(0), glm::vec4(0), glm::vec3(0));
             }
 
             magmaSphereNode->model.updateInstanceMatrix(magmaSphereNode->instanceMatrices);
-
-            //double ballYCoord;
-
-            //KeyFrameAction currentOrigin = keyFrameDirections.at(currentKeyFrame);
-            //KeyFrameAction currentDestination = keyFrameDirections.at(currentKeyFrame + 1);
-
-            // Make ball move
-            /*const float ballSpeed = 60.0f;
-            ballPosition.x += timeDelta * ballSpeed * ballDirection.x;
-            ballPosition.y = ballYCoord;
-            ballPosition.z += timeDelta * ballSpeed * ballDirection.z;*/
-
-            if(options.enableAutoplay) {
-                //padPositionX = 1-(ballPosition.x - ballMinX) / (ballMaxX - ballMinX);
-                //padPositionZ = 1-(ballPosition.z - ballMinZ) / ((ballMaxZ+cameraWallOffset) - ballMinZ);
-            }
-
-            // Check if the ball is hitting the pad when the ball is at the bottom.
-            // If not, you just lost the game! (hehe)
-            //if (jumpedToNextFrame && currentOrigin == BOTTOM && currentDestination == TOP) {
-            //    //double padLeftX  = boxNode->position.x - (boxDimensions.x/2) + (1 - padPositionX) * (boxDimensions.x - padDimensions.x);
-            //    //double padRightX = padLeftX + padDimensions.x;
-            //    //double padFrontZ = boxNode->position.z - (boxDimensions.z/2) + (1 - padPositionZ) * (boxDimensions.z - padDimensions.z);
-            //    //double padBackZ  = padFrontZ + padDimensions.z;
-
-            //    if (   ballPosition.x < padLeftX
-            //        || ballPosition.x > padRightX
-            //        || ballPosition.z < padFrontZ
-            //        || ballPosition.z > padBackZ
-            //    ) {
-            //        hasLost = true;
-            //        if (options.enableMusic) {
-            //            sound->stop();
-            //            delete sound;
-            //        }
-            //    }
-            //}
         }
     }
-
-    //orthoProject = glm::ortho(0.0f, static_cast<float>(windowWidth), 0.0f, static_cast<float>(windowHeight), nearPlane, farPlane);
 
     // ------------------------------------ Camera position ------------------------------------ //
 
@@ -813,17 +750,6 @@ void updateFrame(GLFWwindow* window) {
 
     cameraFaceDirection = glm::vec3(glm::rotate(yawFactor, glm::vec3(0, 1, 0))*glm::vec4(cameraFaceDirection, 0));
 
-    // Some math to make the camera move in a nice way
-    //float lookRotation = -0.6 / (1 + exp(-5 * (padPositionX-0.5))) + 0.3;
-    //glm::rotate(lookRotation, glm::vec3(0, 1, 0)) *
-    //glm::rotate(0.3f + 0.2f * float(-padPositionZ * padPositionZ), glm::vec3(1, 0, 0))*
-    /*
-    glm::mat4 cameraTransform =
-                    glm::translate(cameraPosition) *
-                    glm::rotate(1.0f, glm::vec3(0, 1, 0)) *
-                    glm::rotate(yawFactor, glm::vec3(0, 1, 0)) *
-                    glm::translate(-cameraPosition);*/
-    //glm::vec3 up = glm::cross(rightDirection, cameraFaceDirection);
     glm::vec3 up = glm::vec3(0,1,0);
 
     ViewMatrix = glm::lookAt(
@@ -834,32 +760,12 @@ void updateFrame(GLFWwindow* window) {
 
     VP = projection * ViewMatrix;
 
-
-    // Move and rotate various SceneNodes
-    //boxNode->position = { 0, -10, -80 };
-
-    //ballNode->position = ballPosition;
-    //ballNode->scale = glm::vec3(ballRadius);
-    //ballNode->rotation = { 0, totalElapsedTime*2, 0 };
-
-    /*padNode->position  = {
-        boxNode->position.x - (boxDimensions.x/2) + (padDimensions.x/2) + (1 - padPositionX) * (boxDimensions.x - padDimensions.x),
-        boxNode->position.y - (boxDimensions.y/2) + (padDimensions.y/2),
-        boxNode->position.z - (boxDimensions.z/2) + (padDimensions.z/2) + (1 - padPositionZ) * (boxDimensions.z - padDimensions.z)
-    };*/
-
     updateNodeTransformations(rootNode, VP);
 }
 
 void updateNodeTransformations(SceneNode* node, glm::mat4 transformationThusFar) {
     glm::mat4 transformationMatrix = glm::composeTransform(node->scale, node->rotation, node->position, glm::vec3(0), glm::vec4(0), node->referencePoint);
-            /*  glm::translate(node->position)
-            * glm::translate(node->referencePoint)
-            * glm::rotate(node->rotation.y, glm::vec3(0,1,0))
-            * glm::rotate(node->rotation.x, glm::vec3(1,0,0))
-            * glm::rotate(node->rotation.z, glm::vec3(0,0,1))
-            * glm::scale(node->scale)
-            * glm::translate(-node->referencePoint);*/
+
     node->modelMatrix = transformationMatrix; // M
     node->modelViewMatrix = ViewMatrix * transformationMatrix; // MV
     node->viewProjectionMatrix = projection * ViewMatrix; // MV
@@ -878,8 +784,6 @@ void updateNodeTransformations(SceneNode* node, glm::mat4 transformationThusFar)
 
 void renderNode(SceneNode* node) {
 
-    //auto screenPos = glm::vec3(node->modelMatrix * glm::vec4(0.0, 0.0, 0.0, 1.0));
-
     // Common uniforms for phong shader 
     phongShader->activate();
     glUniformMatrix4fv(phongShader->getUniformFromName("MVP"), 1, GL_FALSE, glm::value_ptr(node->modelViewProjectionMatrix)); // MVP
@@ -888,21 +792,16 @@ void renderNode(SceneNode* node) {
 
     glUniformMatrix4fv(phongShader->getUniformFromName("viewProjectionMatrix"), 1, GL_FALSE, glm::value_ptr(node->viewProjectionMatrix));
 
-    //glUniform3fv(phongShader->getUniformFromName("textPos"), 1, glm::value_ptr(screenPos));
-
     glUniformMatrix4fv(phongShader->getUniformFromName("modelMatrix"), 1, GL_FALSE, glm::value_ptr(node->modelMatrix));
 
     glm::mat3 normalMatrix = glm::mat3(glm::transpose(glm::inverse(node->modelMatrix)));
     glUniformMatrix3fv(phongShader->getUniformFromName("normalMatrix"), 1, GL_FALSE, glm::value_ptr(normalMatrix));
 
-
     glUniform1i(phongShader->getUniformFromName("useTexture"), 0);
     glUniform1i(instancingShader->getUniformFromName("useTexture"), 0);
-    //glUniform1i(phongShader->getUniformFromName("useInstance"), 0);
 
     std::string number = std::to_string(NumLightProcessed);
-    //std::string numSprite = std::to_string(0);
-    //std::string numPBR = std::to_string(0);
+
     switch(node->nodeType) {
         //case GEOMETRY:
         //    phongShader->activate();
@@ -917,8 +816,6 @@ void renderNode(SceneNode* node) {
             //phongShader->activate();
             glUniformMatrix4fv(pbrShader->getUniformFromName("MVP"), 1, GL_FALSE, glm::value_ptr(node->modelViewProjectionMatrix)); // MVP
             
-            //glUniform1f(pbrShader->getUniformFromName("useInstancing"), 1);
-            //glUniform1i(phongShader->getUniformFromName("useTexture"), 1);
             //if (node->vertexArrayObjectID != -1) {
             //}
                 //drawModel(node->vertexArrayObjectID, node->model);
@@ -936,8 +833,6 @@ void renderNode(SceneNode* node) {
             glUniformMatrix3fv(instancingShader->getUniformFromName("normalMatrix"), 1, GL_FALSE, glm::value_ptr(normalMatrix));
             glUniformMatrix4fv(instancingShader->getUniformFromName("modelMatrix"), 1, GL_FALSE, glm::value_ptr(node->modelMatrix));
 
-            //node->model.drawModel(instancingShader);
-
             if (node->vertexArrayObjectID != -1) {
                 glBindVertexArray(node->vertexArrayObjectID);
                 glDrawElementsInstanced(
@@ -945,14 +840,6 @@ void renderNode(SceneNode* node) {
                 );
                 glBindVertexArray(0);
             }
-            /*for (unsigned int i = 0; i < node->modelMatrices.size(); i++)
-            {
-            }*/
-
-            //    //glBindVertexArray(node->vertexArrayObjectID);
-            //    //glDrawElements(GL_TRIANGLES, node->VAOIndexCount, GL_UNSIGNED_INT, nullptr);
-            //}
-            //break;
         
         case OVERLAY: 
             overlayShader->activate();
@@ -985,7 +872,6 @@ void renderNode(SceneNode* node) {
             break;
         case POINT_LIGHT: 
             phongShader->activate();
-            //glUniform1ui(7, lightSources.size());
             auto pos = (node->modelViewProjectionMatrix * glm::vec4(0.0, 0.0, 0.0, 1.0));
             glUniform3fv(phongShader->getUniformFromName(("pointLights["+ number +"].position").c_str()), 1, glm::value_ptr(glm::vec3(pos.x, pos.y, pos.z)));
             //glUniform3fv(phongShader->getUniformFromName(("pointLights["+ number +"].lightColor").c_str()), 1, glm::value_ptr(lightSources[NumLightProcessed].lightColor));
@@ -1016,7 +902,7 @@ void renderNode(SceneNode* node) {
 void renderFrame(GLFWwindow* window) {
 
     // -------------------- Initiate post process -------------------- //
-    // 
+
     // Bind the custom framebuffer
     glBindFramebuffer(GL_FRAMEBUFFER, postProcessingFBO);
     // Specify the color of the background
@@ -1028,7 +914,14 @@ void renderFrame(GLFWwindow* window) {
 
     //glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glCullFace(GL_BACK);
-    // -------------------- Draw geo-------------------- //
+    // -------------------- Draw geo -------------------- //
+    // 
+    // Enable transparency
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
 
     overlayShader->activate();
     glUniform3fv(overlayShader->getUniformFromName("viewPos"), 1, glm::value_ptr(cameraPosition));
@@ -1047,7 +940,9 @@ void renderFrame(GLFWwindow* window) {
 
 
     // -------------------- Post process -------------------- //
+    glDisable(GL_BLEND);
     glCullFace(GL_FRONT);
+    
 
     blurShader->activate();
     glBindFramebuffer(GL_FRAMEBUFFER, bloomFBO);
