@@ -27,13 +27,13 @@ public:
 
     void GLModel::updateInstanceMatrix(std::vector<glm::mat4> newInstanceMatrix);
 
+    unsigned int instancing;
 private:
     bool loadModel(const char* filename);
 
 
     //Gloom::Shader shader;
     // Holds number of instances (if 1 the mesh will be rendered normally)
-    unsigned int instancing; 
     GLuint ssboModelMatrices;
     std::vector<GLuint> VAOs;
     GLuint VAO;

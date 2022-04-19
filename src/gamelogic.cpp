@@ -58,6 +58,7 @@ SceneNode* textureAtlasNode;
 SceneNode* textEmptyNode;
 SceneNode* magmaSphereNode;
 SceneNode* shipNode;
+SceneNode* rockNode;
 
 // Create Frame Buffer Object
 GLuint postProcessingFBO;
@@ -317,7 +318,7 @@ std::vector <glm::vec3> distributeOnGrid(unsigned int amount, int width, float o
 }
 
 
-std::vector <glm::mat4> distributeOnDisc(unsigned int amount, float radius, float offset) {
+std::vector <glm::mat4> distributeOnDisc(unsigned int amount, float radius, float offset, bool randomScale = false, bool randomRotation= false) {
     std::vector <glm::mat4> instanceMatrices(amount);
     for (unsigned int i = 0; i < amount; i++)
     {
@@ -339,13 +340,17 @@ std::vector <glm::mat4> distributeOnDisc(unsigned int amount, float radius, floa
         model = glm::translate(model, glm::vec3(x, y, z));
 
         // 2. scale: scale between 0.05 and 0.25f
-        /*float scale = (rand() % 20) / 100.0f + 0.05;
-        model = glm::scale(model, glm::vec3(scale));*/
+        if (randomScale) {
+            float scale = (rand() % 20) / 100.0f + 0.05;
+            model = glm::scale(model, glm::vec3(scale));
+        }
 
         // 3. rotation: add random rotation around a (semi)randomly picked rotation axis vector
-        /*float rotAngle = (rand() % 360);
-        model = glm::rotate(model, rotAngle, glm::vec3(0.4f, 0.6f, 0.8f));*/
 
+        if (randomRotation) {
+            float rotAngle = (rand() % 360);
+            model = glm::rotate(model, rotAngle, glm::vec3(0.4f, 0.6f, 0.8f));
+        }
         // 4. now add to list of matrices
         instanceMatrices[i] = model;
     }
@@ -539,6 +544,8 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
 
     laserNode = createSceneNode();
 
+    rockNode = createSceneNode();
+
 
     // assign VAO
 
@@ -563,6 +570,7 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     textEmptyNode->diffuseTextureID = emptyDiffuseID;
     
     unsigned int amount = 200;
+    unsigned int amount2 = 2000;
 
     std::srand(glfwGetTime()); // initialize random seed	
     float radius = 20.0;
@@ -570,6 +578,7 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
 
     auto instanceMatrices = distributeOnDisc(amount, radius, offset);
     auto instanceMatrices2 = distributeOnDisc(amount, radius, offset);
+    auto instanceMatrices3 = distributeOnDisc(amount2, 1.5*radius, offset, true, true);
     auto instancePos = distributeOnGrid(amount, amount/2, 10);
 
     //testCubeNode->nodeType = INCTANCED_GEOMETRY;
@@ -584,6 +593,7 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     std::string laserPlanePath = "../res/mesh/misc/laser_plane.gltf";
     std::string shipPath = "../res/mesh/misc/UFO2.gltf";
     std::string galaxyPath = "../res/mesh/misc/galaxy.gltf";
+    std::string rockPath = "../res/mesh/misc/rock_boulder.gltf";
 
     //std::string markerPath = "..res/mesh/marker/marker.gltf";
 
@@ -596,6 +606,12 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     shipNode->nodeType = GLTF_GEOMETRY;
     shipNode->scale= glm::vec3(1);
     rootNode->children.push_back(shipNode);
+    
+    rockNode->instanceMatrices = instanceMatrices3;
+    rockNode->model = GLModel(rockPath.c_str(), amount2, rockNode->instanceMatrices);
+    rockNode->nodeType = GLTF_GEOMETRY;
+    rockNode->scale= glm::vec3(0.1);
+    magmaSphereNode->children.push_back(rockNode);
 
     markerNode->model = GLModel(markerPath.c_str());
     markerNode->scale = glm::vec3(1);
@@ -620,7 +636,7 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     magmaSphereNode->model = GLModel(magmaSpherePath.c_str());
     magmaSphereNode->nodeType = GLTF_GEOMETRY;
     magmaSphereNode->position = glm::vec3(0,-300,-100);
-    magmaSphereNode->rotation= glm::vec3(1,0,1);
+    //magmaSphereNode->rotation= glm::vec3(1,0,1);
     magmaSphereNode->scale = glm::vec3(150);
     sceneNode->children.push_back(magmaSphereNode);
 
@@ -710,8 +726,10 @@ void updateFrame(GLFWwindow* window) {
             double frameDuration = frameEnd - frameStart;
             fractionFrameComplete = elapsedTimeInFrame / frameDuration;
 
+            /*magmaSphereNode->rotation.x += timeDelta*0.01;
+            magmaSphereNode->rotation.z += timeDelta*0.01; */
+            
             magmaSphereNode->rotation.y += timeDelta*0.01;
-            magmaSphereNode->rotation.z += timeDelta*0.01;
 
             shipNode->setPoint = cursorProjectedPosition;
 
@@ -737,7 +755,7 @@ void updateFrame(GLFWwindow* window) {
                 glm::vec3 spreadContribution;
                 glm::vec3 closestPos;
                 float closestDist = 10000000000;
-                
+                float scaleFactor = 0;
                 for (int j = 0; j < prevPos.size(); j++) {
                     if (j != i) {
                         auto localDist = translation - prevPos[j];
@@ -747,15 +765,17 @@ void updateFrame(GLFWwindow* window) {
                             closestDist = localLength;
                             closestPos = localDist;
                         }
-
-                        spreadContribution += glm::vec3 (1.0f/glm::cosh(localDist.x), 0, 1.0f / glm::cosh(localDist.z));
+                        scaleFactor += 1.0f / glm::cosh(localLength);
+                        //auto scaledDist = glm::abs(1.0f / glm::cosh(localDist)) * 1.0f / glm::cosh(localDist);
+                        spreadContribution += scaleFactor * glm::normalize(glm::vec3(localDist.x, 0, localDist.z));
+                        
                     }
                     //spreadContribution += 1.0f / glm::cosh(translation - pos);
                 }
 
                 //laserNode->instanceMatrices[i] = glm::lookAt(translation, closestPos, glm::vec3(0, 1, 0));
                 
-                spreadContribution /= shipNode->instanceMatrices.size();
+                spreadContribution /= (shipNode->instanceMatrices.size()-1);
 
                 //magmaSphereNode->instanceMatrices[i] = glm::lookAt(translation, closestPos, glm::vec3(0, 1, 0));
                 glm::mat4 x = glm::mat4(1);
@@ -763,13 +783,14 @@ void updateFrame(GLFWwindow* window) {
                 //glm::vec4 dirvec = glm::vec4(0.0f, 0.0f, 1.0f, 1.0f) * glm::rotate(static_cast<float>(timeDelta), glm::vec3(0.0f, 1.0f, 0.0f));
                 //shipNode->instanceMatrices[i] *= rotationAlign(glm::normalize( glm::vec3(glm::sin(static_cast<float>(0.001f*timeDelta))) - translation), glm::vec3(0, 1, 0));
                 //shipNode->instanceMatrices[i] *= glm::translate(shipNode->instanceMatrices[i], translation) * glm::rotate(static_cast<float>(timeDelta), glm::vec3(0, 1, 0)) * glm::translate(shipNode->instanceMatrices[i], -translation);
-                shipNode->instanceMatrices[i] *= glm::rotate(static_cast<float>(timeDelta), glm::vec3(0, 1, 0));
+                //shipNode->instanceMatrices[i] *= glm::rotate(static_cast<float>(timeDelta), glm::vec3(0, 1, 0));
                 //shipNode->instanceMatrices[i] = glm::translate(shipNode->instanceMatrices[i], translation) * shipNode->instanceMatrices[i] * glm::translate(shipNode->instanceMatrices[i], -translation);
                 //x *= alignTowards(translation, glm::vec3(0,0,1), glm::vec3(0, 1, 0));
                 //magmaSphereNode->instanceMatrices[i] = glm::translate(x, translation);
-
-                shipNode->instanceMatrices[i] = glm::translate(shipNode->instanceMatrices[i], 0.0f 
-                    * spreadContribution
+                closestPos.y = 0;
+                shipNode->instanceMatrices[i] = glm::translate(shipNode->instanceMatrices[i], 0.3f 
+                    //* - glm::normalize(closestPos)
+                    * (spreadContribution)
                     + 1.0f 
                     * static_cast<float>(timeDelta) 
                     * dir 
@@ -905,6 +926,9 @@ void renderNode(SceneNode* node) {
             glUniformMatrix4fv(pbrShader->getUniformFromName("modelMatrix"), 1, GL_FALSE, glm::value_ptr(node->modelMatrix));
             glUniform1i(pbrShader->getUniformFromName("selfShadow"), node->selfShadow);
 
+            if (node->model.instancing > 1) {
+                node->model.updateInstanceMatrix(node->instanceMatrices);
+            }
             glUniformMatrix3fv(pbrShader->getUniformFromName("normalMatrix"), 1, GL_FALSE, glm::value_ptr(normalMatrix));
             node->model.drawModel(pbrShader);
             break;

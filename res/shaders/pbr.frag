@@ -22,7 +22,7 @@ layout(binding = 1) uniform sampler2D normalTexture;
 layout(binding = 2) uniform sampler2D roughnessTexture;
 layout(binding = 3) uniform sampler2D emissiveTexture;
 
-vec3 sun_position = vec3(-1, 1, -1); 
+vec3 sun_position = vec3(-3, -0.5, -1); 
 vec3 sun_color = vec3(2);
 vec3 ambient= vec3(0.01); 
 

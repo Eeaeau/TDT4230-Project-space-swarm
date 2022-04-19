@@ -31,8 +31,10 @@ void main(){
 	gl_Position = MVP * vec4(in_vertex, 1);
 
 	if (useInstancing == 1){
-		gl_Position = viewProjectionMatrix * model[gl_InstanceID] * modelMatrix * vec4(in_vertex, 1);
-		normalMatrix = mat3(transpose(inverse(model[gl_InstanceID] * modelMatrix)));
+//		gl_Position = viewProjectionMatrix * model[gl_InstanceID] * modelMatrix * vec4(in_vertex, 1);
+		gl_Position = MVP * model[gl_InstanceID] * vec4(in_vertex, 1);
+//		normalMatrix = mat3(transpose(inverse(model[gl_InstanceID] * modelMatrix)));
+		normalMatrix = mat3(transpose(inverse(modelMatrix * model[gl_InstanceID])));
 	}
 
 
