@@ -14,6 +14,7 @@ uniform int useDiffuseTexture;
 uniform int useRoughnessTexture;
 uniform int useEmissiveTexture;
 //uniform float roughnessFactor;
+uniform int selfShadow;
 
 //uniform sampler2D tex;
 layout(binding = 0) uniform sampler2D diffuseTexture;
@@ -37,6 +38,11 @@ float fragBrightness(vec4 fragColor) {
 vec4 emissiveColor = vec4(1);
 vec4 diffuseColor = baseColorFactor;
 
+float hillEquation(float L, float Ka, float n) {
+	return 1/(1+pow(Ka/L,n));	
+}
+
+
 void main() {
 
 	vec3 normal = normalize(normal);
@@ -47,27 +53,31 @@ void main() {
 
 	if (useDiffuseTexture == 1) {
 		diffuseColor = texture(diffuseTexture, texcoord);
+		emissiveColor = texture(diffuseTexture, texcoord);
 	}
 
 	if (useEmissiveTexture == 1) {
 		emissiveColor = texture(emissiveTexture, texcoord);
-	} 
-	else if (useEmissiveTexture == 2) {
-		emissiveColor = texture(diffuseTexture, texcoord);
-	} 
+	}
 
 
 //	float lum = max(dot(normal, normalize(sun_position)), 0.0);
 //	texture(normalTexture, texcoord).rgb
-	float lum = max(dot(normal, normalize(sun_position)), 0.0);
+	float lum = 1.0;
+	if (selfShadow == 1) {
+		lum = max(dot(normal, normalize(sun_position)), 0.0);
+	}
+
 	fragColor = diffuseColor * vec4((ambient + lum) * sun_color, 1.0);
 //	fragColor.rgb = normal;
 
 	brightColor vec4(vec3(0), 1);
 
-    if (fragBrightness(emissiveColor) > 0.3f) {
-		brightColor.rgb += emissiveColor.rgb;
-	}
+//    if (fragBrightness(emissiveColor) > 0.3f) {
+//		
+//	}
+
+	brightColor.rgb = hillEquation(fragBrightness(emissiveColor), 0.5, 4) * emissiveColor.rgb;
 
 	brightColor.rgb *= emissiveFactor;
 

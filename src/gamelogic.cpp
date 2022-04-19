@@ -39,8 +39,8 @@ enum KeyFrameAction {
 double padPositionX = 0;
 double padPositionZ = 0;
 
-float nearPlane = 0.1f;
-float farPlane = 350.f;
+float nearPlane = 1.0f;
+float farPlane = 2000.f;
 
 glm::mat4 projection;
 glm::mat4 ViewMatrix;
@@ -417,8 +417,8 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
         -1.0f,  1.0f,  0.0f, 1.0f
     };
 
-    auto gamma = 2.2f;
-    auto exposure = 0.5;
+    auto gamma = 1.0f;
+    auto exposure = 0.8;
 
     framebufferShader->activate();
     glUniform1i(framebufferShader->getUniformFromName("screenTexture"), 0);
@@ -583,6 +583,7 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     std::string markerPath = "../res/mesh/misc/marker.gltf";
     std::string laserPlanePath = "../res/mesh/misc/laser_plane.gltf";
     std::string shipPath = "../res/mesh/misc/UFO2.gltf";
+    std::string galaxyPath = "../res/mesh/misc/galaxy.gltf";
 
     //std::string markerPath = "..res/mesh/marker/marker.gltf";
 
@@ -601,11 +602,18 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     markerNode->nodeType = GLTF_GEOMETRY;
     rootNode->children.push_back(markerNode);
     
+    sceneNode->model = GLModel(galaxyPath.c_str());
+    sceneNode->scale = glm::vec3(1);
+    sceneNode->nodeType = GLTF_GEOMETRY;
+    sceneNode->selfShadow = false;
+    //rootNode->children.push_back(sceneNode);
+    
     laserNode->instanceMatrices = std::vector<glm::mat4>(instanceMatrices2);
     laserNode->model = GLModel(laserPlanePath.c_str(), amount, laserNode->instanceMatrices);
     laserNode->scale = glm::vec3(1);
+    laserNode->position= glm::vec3(0, -2, 0);
     laserNode->nodeType = GLTF_GEOMETRY;
-    rootNode->children.push_back(laserNode);
+    //rootNode->children.push_back(laserNode);
 
     magmaSphereNode->instanceMatrices = instanceMatrices;
     //magmaSphereNode->model = GLModel(magmaSpherePath.c_str(), amount, magmaSphereNode->instanceMatrices);
@@ -753,19 +761,19 @@ void updateFrame(GLFWwindow* window) {
                 glm::mat4 x = glm::mat4(1);
                 //x *= glm::lookAt(translation, translationk - glm::normalize(closestPos - translation), glm::vec3(0, 1, 0));
                 //glm::vec4 dirvec = glm::vec4(0.0f, 0.0f, 1.0f, 1.0f) * glm::rotate(static_cast<float>(timeDelta), glm::vec3(0.0f, 1.0f, 0.0f));
-                //magmaSphereNode->instanceMatrices[i] *= rotationAlign(glm::normalize( glm::vec3(glm::sin(static_cast<float>(timeDelta))) - translation), glm::vec3(0, 1, 0));
+                //shipNode->instanceMatrices[i] *= rotationAlign(glm::normalize( glm::vec3(glm::sin(static_cast<float>(0.001f*timeDelta))) - translation), glm::vec3(0, 1, 0));
+                //shipNode->instanceMatrices[i] *= glm::translate(shipNode->instanceMatrices[i], translation) * glm::rotate(static_cast<float>(timeDelta), glm::vec3(0, 1, 0)) * glm::translate(shipNode->instanceMatrices[i], -translation);
                 shipNode->instanceMatrices[i] *= glm::rotate(static_cast<float>(timeDelta), glm::vec3(0, 1, 0));
+                //shipNode->instanceMatrices[i] = glm::translate(shipNode->instanceMatrices[i], translation) * shipNode->instanceMatrices[i] * glm::translate(shipNode->instanceMatrices[i], -translation);
                 //x *= alignTowards(translation, glm::vec3(0,0,1), glm::vec3(0, 1, 0));
                 //magmaSphereNode->instanceMatrices[i] = glm::translate(x, translation);
 
-                //magmaSphereNode->instanceMatrices[i] = glm::translate(magmaSphereNode->instanceMatrices[i], 0.1f * spreadContribution 
-                //    + 1.0f 
-                //    * static_cast<float>(timeDelta) 
-                //    * dir 
-                //    * (0.5f + glm::min(glm::length(dist), 5.0f)));
-                //
-                //
-                //meanPos.push_back(translation);
+                shipNode->instanceMatrices[i] = glm::translate(shipNode->instanceMatrices[i], 0.0f 
+                    * spreadContribution
+                    + 1.0f 
+                    * static_cast<float>(timeDelta) 
+                    * dir 
+                    * (0.5f + glm::min(glm::length(dist), 5.0f)));
             }
 
             //nextSpread /= magmaSphereNode->instanceMatrices.size();
@@ -893,10 +901,10 @@ void renderNode(SceneNode* node) {
             pbrShader->activate();
             //phongShader->activate();
             glUniformMatrix4fv(pbrShader->getUniformFromName("MVP"), 1, GL_FALSE, glm::value_ptr(node->modelViewProjectionMatrix)); // MVP
-            
-            //if (node->vertexArrayObjectID != -1) {
-            //}
-                //drawModel(node->vertexArrayObjectID, node->model);
+            glUniformMatrix4fv(pbrShader->getUniformFromName("viewProjectionMatrix"), 1, GL_FALSE, glm::value_ptr(node->viewProjectionMatrix));
+            glUniformMatrix4fv(pbrShader->getUniformFromName("modelMatrix"), 1, GL_FALSE, glm::value_ptr(node->modelMatrix));
+            glUniform1i(pbrShader->getUniformFromName("selfShadow"), node->selfShadow);
+
             glUniformMatrix3fv(pbrShader->getUniformFromName("normalMatrix"), 1, GL_FALSE, glm::value_ptr(normalMatrix));
             node->model.drawModel(pbrShader);
             break;

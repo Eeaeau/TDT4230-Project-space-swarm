@@ -44,6 +44,7 @@ uniform PointLight pointLights[NR_POINT_LIGHTS];
 uniform mat3 normalMatrix;
 uniform int useTexture;
 
+
 layout (location = 0) out vec4 fragColor;  
 layout (location = 1) out vec4 brightColor;  
 

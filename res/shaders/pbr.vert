@@ -11,6 +11,8 @@ layout(std430, binding = 0) buffer modelMatrices
 };
 
 uniform mat4 MVP;
+uniform mat4 viewProjectionMatrix;
+uniform mat4 modelMatrix;
 uniform mat3 normalMatrix;
 uniform int useInstancing;
 
@@ -22,7 +24,19 @@ out mat3 TBN;
 
 void main(){
 
-	vec3 bitangent = normalize(cross(in_normal, in_tangent));
+	mat3 normalMatrix = normalMatrix;
+
+	position = gl_Position.xyz;
+
+	gl_Position = MVP * vec4(in_vertex, 1);
+
+	if (useInstancing == 1){
+		gl_Position = viewProjectionMatrix * model[gl_InstanceID] * modelMatrix * vec4(in_vertex, 1);
+		normalMatrix = mat3(transpose(inverse(model[gl_InstanceID] * modelMatrix)));
+	}
+
+
+	vec3 bitangent = normalize(normalMatrix * cross(in_normal, in_tangent));
 
 	tangent = normalize(normalMatrix * in_tangent);
 
@@ -34,13 +48,6 @@ void main(){
 		 normalize(normal) 
 	);
 
-	position = gl_Position.xyz;
-
-	gl_Position = MVP * vec4(in_vertex, 1);
-
-	if (useInstancing == 1){
-		gl_Position = MVP * model[gl_InstanceID] * vec4(in_vertex, 1);
-	}
 //	normal = normalize(mat3(MVP) * in_normal);
 //	tangent = normalize(in_tangent);
 	position = in_vertex;
