@@ -24,7 +24,7 @@ void runProgram(GLFWwindow* window, CommandLineOptions options)
     // Configure miscellaneous OpenGL settings
     //glDisable(GL_CULL_FACE);
     glEnable(GL_CULL_FACE);
-    glCullFace(GL_FRONT);
+    //glCullFace(GL_FRONT);
     glFrontFace(GL_CCW);
     
     // Enables Multisampling

@@ -414,13 +414,13 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     float rectangleVertices[] =
     {
         //  Coords   // texCoords
-         1.0f, -1.0f,  1.0f, 0.0f,
-        -1.0f, -1.0f,  0.0f, 0.0f,
         -1.0f,  1.0f,  0.0f, 1.0f,
-
-         1.0f,  1.0f,  1.0f, 1.0f,
+        -1.0f, -1.0f,  0.0f, 0.0f,
          1.0f, -1.0f,  1.0f, 0.0f,
-        -1.0f,  1.0f,  0.0f, 1.0f
+
+        -1.0f,  1.0f,  0.0f, 1.0f,
+         1.0f, -1.0f,  1.0f, 0.0f,
+         1.0f,  1.0f,  1.0f, 1.0f,
     };
 
     auto gamma = 1.0f;
@@ -1053,7 +1053,7 @@ void renderFrame(GLFWwindow* window) {
 
     // -------------------- Post process -------------------- //
     //glDisable(GL_BLEND);
-    glCullFace(GL_FRONT);
+    //glCullFace(GL_FRONT);
 
     blurShader->activate();
     glBindFramebuffer(GL_FRAMEBUFFER, bloomFBO);
@@ -1066,23 +1066,27 @@ void renderFrame(GLFWwindow* window) {
     // Render the bloom image
     glBindVertexArray(rectVAO);
     glDisable(GL_DEPTH_TEST);
-    //glDisable(GL_CULL_FACE);
+
     glDrawArrays(GL_TRIANGLES, 0, 6);
     glBindVertexArray(0);
+
 
     // Bind the default framebuffer
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    // Draw the finnal image on framebuffer rectangle
+    // Draw the final stacked image on framebuffer rectangle
     framebufferShader->activate();
     glBindVertexArray(rectVAO);
     glDisable(GL_DEPTH_TEST); // prevents framebuffer rectangle from being discarded
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, postProcessingTexture);
 
+
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, bloomBuffer);
+
     glDrawArrays(GL_TRIANGLES, 0, 6);
     glBindVertexArray(0);
+
     
 }
