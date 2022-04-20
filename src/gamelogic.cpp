@@ -474,7 +474,12 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, bloomTexture, 0);
 
-
+    // create and attach depth buffer (renderbuffer)
+    unsigned int rboDepth;
+    glGenRenderbuffers(1, &rboDepth);
+    glBindRenderbuffer(GL_RENDERBUFFER, rboDepth);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, windowWidth, windowHeight);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rboDepth);
 
     // Tell OpenGL we need to draw to both attachments
     //attachments = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
@@ -1074,6 +1079,8 @@ void renderFrame(GLFWwindow* window) {
     // Bind the default framebuffer
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+
+    //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     // Draw the final stacked image on framebuffer rectangle
     framebufferShader->activate();
     glBindVertexArray(rectVAO);

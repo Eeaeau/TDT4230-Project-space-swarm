@@ -94,6 +94,9 @@ void main() {
 	}
 
 	fragColor = diffuseColor * vec4((ambient + lum) * sun_color, 1.0);
+
+	fragColor = vec4(normal, 1.0);
+
 //	fragColor = vec4(vec3(gl_FragCoord.z), 1.0);
 //	fragColor.rgb = normal;
 
