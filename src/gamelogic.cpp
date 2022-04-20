@@ -453,7 +453,6 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     glGenTextures(1, &postProcessingTexture);
     glBindTexture(GL_TEXTURE_2D, postProcessingTexture);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, windowWidth, windowHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-    //glGenerateMipmap(GL_TEXTURE_2D);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
@@ -1026,6 +1025,7 @@ void renderFrame(GLFWwindow* window) {
     // Enable depth testing since it's disabled when drawing the framebuffer rectangle
     glEnable(GL_DEPTH_TEST);
 
+    
     //glBindFramebuffer(GL_FRAMEBUFFER, 0);
     // -------------------- Draw geo -------------------- //
     // 
@@ -1033,9 +1033,7 @@ void renderFrame(GLFWwindow* window) {
     /*glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);*/
 
-    glCullFace(GL_FRONT);
-    //glFrontFace(GL_CW);
-    glDepthFunc(GL_LESS);
+    glCullFace(GL_BACK);
 
     overlayShader->activate();
     glUniform3fv(overlayShader->getUniformFromName("viewPos"), 1, glm::value_ptr(cameraPosition));
@@ -1055,8 +1053,7 @@ void renderFrame(GLFWwindow* window) {
 
     // -------------------- Post process -------------------- //
     //glDisable(GL_BLEND);
-    glCullFace(GL_BACK);
-    glFrontFace(GL_CCW);
+    glCullFace(GL_FRONT);
 
     blurShader->activate();
     glBindFramebuffer(GL_FRAMEBUFFER, bloomFBO);
@@ -1066,7 +1063,7 @@ void renderFrame(GLFWwindow* window) {
     glBindTexture(GL_TEXTURE_2D, bloomTexture);
     glGenerateMipmap(GL_TEXTURE_2D);
 
-    // Render the image
+    // Render the bloom image
     glBindVertexArray(rectVAO);
     glDisable(GL_DEPTH_TEST);
     //glDisable(GL_CULL_FACE);
@@ -1076,17 +1073,15 @@ void renderFrame(GLFWwindow* window) {
     // Bind the default framebuffer
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    // Draw the framebuffer rectangle
+    // Draw the finnal image on framebuffer rectangle
     framebufferShader->activate();
     glBindVertexArray(rectVAO);
     glDisable(GL_DEPTH_TEST); // prevents framebuffer rectangle from being discarded
-    //glDisable(GL_CULL_FACE);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, postProcessingTexture);
-    //glGenerateMipmap(GL_TEXTURE_2D);
+
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, bloomBuffer);
-    //glGenerateMipmap(GL_TEXTURE_2D);
     glDrawArrays(GL_TRIANGLES, 0, 6);
     glBindVertexArray(0);
     
