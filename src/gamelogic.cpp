@@ -771,7 +771,7 @@ void updateFrame(GLFWwindow* window) {
                             closestDist = localLength;
                             closestPos = localDist;
                         }
-                        scaleFactor += 1.0f / glm::cosh(localLength);
+                        scaleFactor += 1.0f / glm::cosh(localLength/2);
                         //auto scaledDist = glm::abs(1.0f / glm::cosh(localDist)) * 1.0f / glm::cosh(localDist);
                         spreadContribution += scaleFactor * glm::normalize(glm::vec3(localDist.x, 0, localDist.z));
                         
@@ -1042,6 +1042,10 @@ void renderFrame(GLFWwindow* window) {
 
     overlayShader->activate();
     glUniform3fv(overlayShader->getUniformFromName("viewPos"), 1, glm::value_ptr(cameraPosition));
+
+    pbrShader->activate();
+    glUniform3fv(pbrShader->getUniformFromName("viewPos"), 1, glm::value_ptr(cameraPosition));
+    glUniform1f(pbrShader->getUniformFromName("gameTime"), static_cast<float>(gameElapsedTime/100));
 
     phongShader->activate();
     glUniform3fv(phongShader->getUniformFromName("viewPos"), 1, glm::value_ptr(cameraPosition));

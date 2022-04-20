@@ -3,13 +3,17 @@
 in vec3 normal;
 in vec3 tangent;
 in vec3 position;
+in vec3 fragPos;
 in vec2 texcoord;
 in mat3 TBN;
+
+#define M_PI 3.14159265358979323846
 
 //layout(location = 3) in uniform vec3 emissiveFactor;
 uniform vec4 baseColorFactor;
 uniform vec3 emissiveFactor;
 uniform vec3 cameraFaceDirection;
+uniform vec3 viewPos;
 uniform int useNormalTexture;
 uniform int useDiffuseTexture;
 uniform int useRoughnessTexture;
@@ -17,6 +21,7 @@ uniform int useEmissiveTexture;
 //uniform float roughnessFactor;
 uniform int selfShadow;
 uniform int useFresnel;
+uniform float gameTime;
 
 //uniform sampler2D tex;
 layout(binding = 0) uniform sampler2D diffuseTexture;
@@ -44,24 +49,30 @@ float hillEquation(float L, float Ka, float n) {
 	return 1/(1+pow(Ka/L,n));	
 }
 
-float GeometrySchlickGGX(float NdotV, float k)
-{
-    float nom   = NdotV;
-    float denom = NdotV * (1.0 - k) + k;
-	
-    return nom / denom;
-}
+float rand(vec2 co){return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);}
+float rand (vec2 co, float l) {return rand(vec2(rand(co), l));}
+float rand (vec2 co, float l, float t) {return rand(vec2(rand(co, l), t));}
 
-float GeometrySmith(vec3 N, vec3 V, vec3 L, float k)
-{
-    float NdotV = max(dot(N, V), 0.0);
-    float NdotL = max(dot(N, L), 0.0);
-    float ggx1 = GeometrySchlickGGX(NdotV, k);
-    float ggx2 = GeometrySchlickGGX(NdotL, k);
+float perlin(vec2 p, float dim, float time) {
+	vec2 pos = floor(p * dim);
+	vec2 posx = pos + vec2(1.0, 0.0);
+	vec2 posy = pos + vec2(0.0, 1.0);
+	vec2 posxy = pos + vec2(1.0);
 	
-    return ggx1 * ggx2;
+	float c = rand(pos, dim, time);
+	float cx = rand(posx, dim, time);
+	float cy = rand(posy, dim, time);
+	float cxy = rand(posxy, dim, time);
+	
+	vec2 d = fract(p * dim);
+	d = -0.5 * cos(d * M_PI) + 0.5;
+	
+	float ccx = mix(c, cx, d.x);
+	float cycxy = mix(cy, cxy, d.x);
+	float center = mix(ccx, cycxy, d.y);
+	
+	return center * 2.0 - 1.0;
 }
-
 
 vec3 fresnelSchlick(float cosTheta, vec3 F0)
 {
@@ -86,6 +97,20 @@ void main() {
 	}
 
 
+	vec3 cameraVec = viewPos - fragPos;
+	vec3 viewDir = normalize(cameraVec);
+
+
+	brightColor = vec4(vec3(0), 1);
+
+	brightColor.rgb = hillEquation(fragBrightness(emissiveColor), 0.5, 4) * emissiveColor.rgb;
+
+	brightColor.rgb *= emissiveFactor;
+
+	if (useFresnel == 1) {
+//		brightColor.rgb += 2*max(fresnelSchlick(dot(viewDir, normal), vec3(0.03)) * vec3(0.5,0.5,1), 0) * perlin(texcoord, 2, gameTime);
+	}
+
 //	float lum = max(dot(normal, normalize(sun_position)), 0.0);
 //	texture(normalTexture, texcoord).rgb
 	float lum = 1.0;
@@ -95,24 +120,12 @@ void main() {
 
 	fragColor = diffuseColor * vec4((ambient + lum) * sun_color, 1.0);
 
-	fragColor = vec4(normal, 1.0);
+	fragColor = vec4(vec3(perlin(10*texcoord, 2, gameTime/10000)), 1.0);
+//	fragColor = vec4(normalize(fragPos), 1.0);
 
 //	fragColor = vec4(vec3(gl_FragCoord.z), 1.0);
 //	fragColor.rgb = normal;
 
-	brightColor vec4(vec3(0), 1);
 
-//    if (fragBrightness(emissiveColor) > 0.3f) {
-//		
-//	}
-
-	brightColor.rgb = hillEquation(fragBrightness(emissiveColor), 0.5, 4) * emissiveColor.rgb;
-
-	brightColor.rgb *= emissiveFactor;
-
-	if (useFresnel == 1) {
-//		brightColor.rgb += 2 * fresnelSchlick(dot(-cameraFaceDirection, normal), vec3(0.3)) * vec3(0.5,0.5,1);
-//		brightColor.rgb += vec3(0.5,0.5,1);
-	}
 
 }
