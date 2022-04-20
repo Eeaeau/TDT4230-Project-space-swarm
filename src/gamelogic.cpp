@@ -1045,7 +1045,7 @@ void renderFrame(GLFWwindow* window) {
 
     pbrShader->activate();
     glUniform3fv(pbrShader->getUniformFromName("viewPos"), 1, glm::value_ptr(cameraPosition));
-    glUniform1f(pbrShader->getUniformFromName("gameTime"), static_cast<float>(gameElapsedTime/100));
+    glUniform1f(pbrShader->getUniformFromName("gameTime"), static_cast<float>(gameElapsedTime));
 
     phongShader->activate();
     glUniform3fv(phongShader->getUniformFromName("viewPos"), 1, glm::value_ptr(cameraPosition));
