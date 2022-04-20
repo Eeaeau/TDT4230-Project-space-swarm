@@ -100,6 +100,7 @@ glm::mat4 orthoProject;
 glm::vec3 cursorPosition;
 glm::vec3 cursorProjectedPosition;
 
+glm::vec3 cameraFaceDirection;
 glm::mat4 VP;
 
 GLuint rectVAO, rectVBO;
@@ -605,6 +606,7 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     shipNode->model = GLModel(shipPath.c_str(), amount, shipNode->instanceMatrices);
     shipNode->nodeType = GLTF_GEOMETRY;
     shipNode->scale= glm::vec3(1);
+    shipNode->fresnel= true;
     rootNode->children.push_back(shipNode);
     
     rockNode->instanceMatrices = instanceMatrices3;
@@ -813,7 +815,7 @@ void updateFrame(GLFWwindow* window) {
     float speedModifier = 3.0;
 
 
-    auto cameraFaceDirection = glm::vec3(0.0, -2.0* cameraFaceDirectionFactor, -1.0);
+    cameraFaceDirection = glm::vec3(0.0, -2.0* cameraFaceDirectionFactor, -1.0);
     auto cameraPlaneDirection = glm::vec3(0.0, 0.0, -1.0);
     auto rightDirection = glm::vec3(1.0, 0.0, 0.0);
 
@@ -925,6 +927,8 @@ void renderNode(SceneNode* node) {
             glUniformMatrix4fv(pbrShader->getUniformFromName("viewProjectionMatrix"), 1, GL_FALSE, glm::value_ptr(node->viewProjectionMatrix));
             glUniformMatrix4fv(pbrShader->getUniformFromName("modelMatrix"), 1, GL_FALSE, glm::value_ptr(node->modelMatrix));
             glUniform1i(pbrShader->getUniformFromName("selfShadow"), node->selfShadow);
+            glUniform1i(pbrShader->getUniformFromName("useFresnel"), node->fresnel);
+            glUniform3fv(pbrShader->getUniformFromName("cameraFaceDirection"), 1, glm::value_ptr(cameraFaceDirection));
 
             if (node->model.instancing > 1) {
                 node->model.updateInstanceMatrix(node->instanceMatrices);
@@ -1023,15 +1027,15 @@ void renderFrame(GLFWwindow* window) {
     glEnable(GL_DEPTH_TEST);
 
     //glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glCullFace(GL_BACK);
     // -------------------- Draw geo -------------------- //
     // 
     // Enable transparency
     /*glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);*/
 
-    glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LESS);*/
+    glCullFace(GL_FRONT);
+    //glFrontFace(GL_CW);
+    glDepthFunc(GL_LESS);
 
     overlayShader->activate();
     glUniform3fv(overlayShader->getUniformFromName("viewPos"), 1, glm::value_ptr(cameraPosition));
@@ -1051,8 +1055,8 @@ void renderFrame(GLFWwindow* window) {
 
     // -------------------- Post process -------------------- //
     //glDisable(GL_BLEND);
-    glCullFace(GL_FRONT);
-    
+    glCullFace(GL_BACK);
+    glFrontFace(GL_CCW);
 
     blurShader->activate();
     glBindFramebuffer(GL_FRAMEBUFFER, bloomFBO);
@@ -1065,6 +1069,7 @@ void renderFrame(GLFWwindow* window) {
     // Render the image
     glBindVertexArray(rectVAO);
     glDisable(GL_DEPTH_TEST);
+    //glDisable(GL_CULL_FACE);
     glDrawArrays(GL_TRIANGLES, 0, 6);
     glBindVertexArray(0);
 
@@ -1075,6 +1080,7 @@ void renderFrame(GLFWwindow* window) {
     framebufferShader->activate();
     glBindVertexArray(rectVAO);
     glDisable(GL_DEPTH_TEST); // prevents framebuffer rectangle from being discarded
+    //glDisable(GL_CULL_FACE);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, postProcessingTexture);
     //glGenerateMipmap(GL_TEXTURE_2D);

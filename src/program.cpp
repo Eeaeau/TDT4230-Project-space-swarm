@@ -25,13 +25,16 @@ void runProgram(GLFWwindow* window, CommandLineOptions options)
     //glDisable(GL_CULL_FACE);
     glEnable(GL_CULL_FACE);
     glCullFace(GL_FRONT);
-    glFrontFace(GL_CCW);
+    //glFrontFace(GL_CCW);
     
     // Enables Multisampling
     glEnable(GL_MULTISAMPLE);
 
     // Enable built-in dithering
     glEnable(GL_DITHER);
+
+    // Enables the Depth Buffer
+    glEnable(GL_DEPTH_TEST);
 
     //// Enable transparency
     //glEnable(GL_BLEND);
@@ -48,7 +51,8 @@ void runProgram(GLFWwindow* window, CommandLineOptions options)
     while (!glfwWindowShouldClose(window))
     {
 	    // Clear colour and depth buffers
-	     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glEnable(GL_CULL_FACE);
+	    // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 
         updateFrame(window);

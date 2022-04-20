@@ -73,7 +73,7 @@ struct SceneNode {
 	glm::mat4 modelMatrix;
 	std::vector<glm::mat4> instanceMatrices;
 	glm::mat4 modelViewMatrix;
-
+	bool fresnel = false;
 	// Transforms
 	glm::mat4 viewProjectionMatrix;
 

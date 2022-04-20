@@ -9,12 +9,14 @@ in mat3 TBN;
 //layout(location = 3) in uniform vec3 emissiveFactor;
 uniform vec4 baseColorFactor;
 uniform vec3 emissiveFactor;
+uniform vec3 cameraFaceDirection;
 uniform int useNormalTexture;
 uniform int useDiffuseTexture;
 uniform int useRoughnessTexture;
 uniform int useEmissiveTexture;
 //uniform float roughnessFactor;
 uniform int selfShadow;
+uniform int useFresnel;
 
 //uniform sampler2D tex;
 layout(binding = 0) uniform sampler2D diffuseTexture;
@@ -42,6 +44,29 @@ float hillEquation(float L, float Ka, float n) {
 	return 1/(1+pow(Ka/L,n));	
 }
 
+float GeometrySchlickGGX(float NdotV, float k)
+{
+    float nom   = NdotV;
+    float denom = NdotV * (1.0 - k) + k;
+	
+    return nom / denom;
+}
+
+float GeometrySmith(vec3 N, vec3 V, vec3 L, float k)
+{
+    float NdotV = max(dot(N, V), 0.0);
+    float NdotL = max(dot(N, L), 0.0);
+    float ggx1 = GeometrySchlickGGX(NdotV, k);
+    float ggx2 = GeometrySchlickGGX(NdotL, k);
+	
+    return ggx1 * ggx2;
+}
+
+
+vec3 fresnelSchlick(float cosTheta, vec3 F0)
+{
+    return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
+}
 
 void main() {
 
@@ -80,5 +105,10 @@ void main() {
 	brightColor.rgb = hillEquation(fragBrightness(emissiveColor), 0.5, 4) * emissiveColor.rgb;
 
 	brightColor.rgb *= emissiveFactor;
+
+	if (useFresnel == 1) {
+//		brightColor.rgb += 2 * fresnelSchlick(dot(-cameraFaceDirection, normal), vec3(0.3)) * vec3(0.5,0.5,1);
+//		brightColor.rgb += vec3(0.5,0.5,1);
+	}
 
 }
