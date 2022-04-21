@@ -30,8 +30,9 @@ layout(binding = 2) uniform sampler2D roughnessTexture;
 layout(binding = 3) uniform sampler2D emissiveTexture;
 
 vec3 sun_position = vec3(-3, -0.5, -1); 
-vec3 sun_color = vec3(2);
-vec3 ambient= vec3(0.1); 
+vec3 sun_color = vec3(4);
+vec3 ambient= vec3(0.2, 0.1, 0.1); 
+float specularStrength;
 
 //out vec4 fragColor;
 layout (location = 0) out vec4 fragColor;
@@ -47,31 +48,6 @@ vec4 diffuseColor = baseColorFactor;
 
 float hillEquation(float L, float Ka, float n) {
 	return 1/(1+pow(Ka/L,n));	
-}
-
-float rand(vec2 co){return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);}
-float rand (vec2 co, float l) {return rand(vec2(rand(co), l));}
-float rand (vec2 co, float l, float t) {return rand(vec2(rand(co, l), t));}
-
-float perlin(vec2 p, float dim, float time) {
-	vec2 pos = floor(p * dim);
-	vec2 posx = pos + vec2(1.0, 0.0);
-	vec2 posy = pos + vec2(0.0, 1.0);
-	vec2 posxy = pos + vec2(1.0);
-	
-	float c = rand(pos, dim, time);
-	float cx = rand(posx, dim, time);
-	float cy = rand(posy, dim, time);
-	float cxy = rand(posxy, dim, time);
-	
-	vec2 d = fract(p * dim);
-	d = -0.5 * cos(d * M_PI) + 0.5;
-	
-	float ccx = mix(c, cx, d.x);
-	float cycxy = mix(cy, cxy, d.x);
-	float center = mix(ccx, cycxy, d.y);
-	
-	return center * 2.0 - 1.0;
 }
 
 //	Classic Perlin 3D Noise 
@@ -154,6 +130,27 @@ vec3 fresnelSchlick(float cosTheta, vec3 F0)
     return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
 }
 
+
+vec3 CalcDirectionalLight(vec3 lightColor, vec3 lightDir, vec3 normal, vec3 fragPos, vec3 viewDir) {
+    
+        float diff;
+
+        vec3 reflectDir;
+        float spec;
+
+        // diffuse shading
+        diff = max(dot(normal, lightDir), 0.0);
+
+        reflectDir = reflect(-lightDir, normal);
+        spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
+
+        vec3 diffuse = lightColor  * diff * diffuseColor.rgb;
+        vec3 specular = lightColor * spec * specularStrength; 
+
+        return (diffuse + specular);
+}
+
+
 void main() {
 
 	vec3 normal = normalize(normal);
@@ -170,6 +167,14 @@ void main() {
 	if (useEmissiveTexture == 1) {
 		emissiveColor = texture(emissiveTexture, texcoord);
 	}
+	
+	if (useEmissiveTexture == 1) {
+		emissiveColor = texture(emissiveTexture, texcoord);
+	}
+	
+	if (useRoughnessTexture == 1) {
+		specularStrength = 1/(pow(texture(roughnessTexture, texcoord).r, 2));
+	}
 
 
 	vec3 cameraVec = viewPos - fragPos;
@@ -183,25 +188,20 @@ void main() {
 	brightColor.rgb *= emissiveFactor;
 
 	if (useFresnel == 1) {
-		brightColor.rgb += 6*max(fresnelSchlick(dot(viewDir, normal), vec3(0.02)) * vec3(0.5,0.5,1), 0) * (cnoise(vec3(8*texcoord, gameTime/2))+0.1);
+//		brightColor = vec4(6*max(fresnelSchlick(dot(viewDir, normal), vec3(0.02)), vec3(0))* vec3(0.5,0.5,1)*cnoise(vec3(4*texcoord, gameTime/2)), 1);
+		emissiveColor.rgb = 4*max(fresnelSchlick(dot(viewDir, normal), vec3(0.02)), vec3(0))* vec3(0.5,0.5,1);
+//		brightColor.rgb = hillEquation(fragBrightness(emissiveColor), cnoise(vec3(4*texcoord, gameTime/2)), 4) * emissiveColor.rgb;
+		brightColor.rgb = (cnoise(vec3(4*texcoord, gameTime/2)) + 1)* emissiveColor.rgb;
+//		brightColor = vec4(6*max(fresnelSchlick(dot(viewDir, normal), vec3(0.02)), vec3(0))* vec3(0.5,0.5,1), 0);
 	}
 
-//	float lum = max(dot(normal, normalize(sun_position)), 0.0);
-//	texture(normalTexture, texcoord).rgb
-	float lum = 1.0;
+	fragColor = emissiveColor;
+
 	if (selfShadow == 1) {
-		lum = max(dot(normal, normalize(sun_position)), 0.0);
+	vec3 lightDir = normalize(vec3(-4, -1, 2));
+		fragColor = vec4(CalcDirectionalLight(sun_color, lightDir, normal, fragPos, viewDir), 1);
+		fragColor.rgb += diffuseColor.rgb*ambient;
 	}
-
-	fragColor = diffuseColor * vec4((ambient + lum) * sun_color, 1.0);
-
-//	fragColor = vec4(vec3(perlin(10*texcoord, 2, gameTime_us/10)), 1.0);
-//	fragColor = vec4(vec3(cnoise(vec3(10*texcoord, gameTime/2))), 1.0);
-//	fragColor = vec4(normalize(fragPos), 1.0);
-
-//	fragColor = vec4(vec3(gl_FragCoord.z), 1.0);
-//	fragColor.rgb = normal;
-
 
 
 }
