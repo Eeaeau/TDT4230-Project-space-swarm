@@ -31,7 +31,7 @@ layout(binding = 3) uniform sampler2D emissiveTexture;
 
 vec3 sun_position = vec3(-3, -0.5, -1); 
 vec3 sun_color = vec3(2);
-vec3 ambient= vec3(0.01); 
+vec3 ambient= vec3(0.1); 
 
 //out vec4 fragColor;
 layout (location = 0) out vec4 fragColor;
@@ -183,7 +183,7 @@ void main() {
 	brightColor.rgb *= emissiveFactor;
 
 	if (useFresnel == 1) {
-		brightColor.rgb += 6*max(fresnelSchlick(dot(viewDir, normal), vec3(0.03)) * vec3(0.5,0.5,1), 0) * (cnoise(vec3(10*texcoord, gameTime/2))+0.1);
+		brightColor.rgb += 6*max(fresnelSchlick(dot(viewDir, normal), vec3(0.02)) * vec3(0.5,0.5,1), 0) * (cnoise(vec3(8*texcoord, gameTime/2))+0.1);
 	}
 
 //	float lum = max(dot(normal, normalize(sun_position)), 0.0);
