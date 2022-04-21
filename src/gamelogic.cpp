@@ -267,7 +267,7 @@ void keyCallback(GLFWwindow* window,
 
 float scrollFactor = 5;
 float maxCameraHeight = 80;
-float minCameraHeight = -10;
+float minCameraHeight = -1000;
 
 void scrollCallback(GLFWwindow* window, double x, double y) {
     //scrollFactor = y;
