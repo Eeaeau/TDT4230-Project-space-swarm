@@ -743,6 +743,13 @@ void updateFrame(GLFWwindow* window) {
             //spread = 0;
             std::vector<glm::vec3> nextSpread;
 
+            glm::vec3 scaleMod;
+            glm::quat rotationMod;
+            glm::vec3 translationMod;
+            glm::vec3 skewMod;
+            glm::vec4 perspectiveMod;
+            glm::decompose(shipNode->modelMatrix, scaleMod, rotationMod, translationMod, skewMod, perspectiveMod);
+
             for (int i = 0; i < shipNode->instanceMatrices.size(); i++) {
 
                 glm::vec3 scale;
@@ -791,8 +798,10 @@ void updateFrame(GLFWwindow* window) {
                 //shipNode->instanceMatrices[i] *= glm::rotate(static_cast<float>(timeDelta), glm::vec3(0, 1, 0));
                 //shipNode->instanceMatrices[i] = glm::translate(shipNode->instanceMatrices[i], translation) * shipNode->instanceMatrices[i] * glm::translate(shipNode->instanceMatrices[i], -translation);
                 //x *= alignTowards(translation, glm::vec3(0,0,1), glm::vec3(0, 1, 0));
-                //magmaSphereNode->instanceMatrices[i] = glm::translate(x, translation);
-                closestPos.y = 0;
+                ////magmaSphereNode->instanceMatrices[i] = glm::translate(x, translation);
+                //closestPos.y = 0;
+                //auto temp = glm::inverse(shipNode->modelMatrix) * alignTowards(translation + translationMod, cursorProjectedPosition, glm::vec3(0, 1, 0)) * shipNode->modelMatrix;
+                //shipNode->instanceMatrices[i] = glm::translate(temp, translation);
                 shipNode->instanceMatrices[i] = glm::translate(shipNode->instanceMatrices[i], 0.3f 
                     //* - glm::normalize(closestPos)
                     * (spreadContribution)
