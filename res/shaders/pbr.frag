@@ -50,6 +50,8 @@ float hillEquation(float L, float Ka, float n) {
 	return 1/(1+pow(Ka/L,n));	
 }
 
+
+// --------------------------------------------------- //
 //	Classic Perlin 3D Noise 
 //	by Stefan Gustavson
 //
@@ -125,6 +127,8 @@ float cnoise(vec3 P){
   return 2.2 * n_xyz;
 }
 
+
+
 vec3 fresnelSchlick(float cosTheta, vec3 F0)
 {
     return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
@@ -188,11 +192,9 @@ void main() {
 	brightColor.rgb *= emissiveFactor;
 
 	if (useFresnel == 1) {
-//		brightColor = vec4(6*max(fresnelSchlick(dot(viewDir, normal), vec3(0.02)), vec3(0))* vec3(0.5,0.5,1)*cnoise(vec3(4*texcoord, gameTime/2)), 1);
 		emissiveColor.rgb = 4*max(fresnelSchlick(dot(viewDir, normal), vec3(0.02)), vec3(0))* vec3(0.5,0.5,1);
-//		brightColor.rgb = hillEquation(fragBrightness(emissiveColor), cnoise(vec3(4*texcoord, gameTime/2)), 4) * emissiveColor.rgb;
 		brightColor.rgb = (cnoise(vec3(4*texcoord, gameTime/2)) + 1)* emissiveColor.rgb;
-//		brightColor = vec4(6*max(fresnelSchlick(dot(viewDir, normal), vec3(0.02)), vec3(0))* vec3(0.5,0.5,1), 0);
+//		brightColor.rgb =  emissiveColor.rgb;
 	}
 
 	fragColor = emissiveColor;

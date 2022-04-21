@@ -628,9 +628,8 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     sceneNode->scale = glm::vec3(1);
     sceneNode->nodeType = GLTF_GEOMETRY;
     sceneNode->selfShadow = false;
-    //rootNode->children.push_back(sceneNode);
     
-    laserNode->instanceMatrices = std::vector<glm::mat4>(instanceMatrices2);
+    laserNode->instanceMatrices = std::vector<glm::mat4>(instanceMatrices);
     laserNode->model = GLModel(laserPlanePath.c_str(), amount, laserNode->instanceMatrices);
     laserNode->scale = glm::vec3(1);
     laserNode->position= glm::vec3(0, -2, 0);
@@ -1066,13 +1065,12 @@ void renderFrame(GLFWwindow* window) {
 
     blurShader->activate();
     glBindFramebuffer(GL_FRAMEBUFFER, bloomFBO);
-
-    // In the first bounc we want to get the data from the bloomTexture
-
-    glBindTexture(GL_TEXTURE_2D, bloomTexture);
-    glGenerateMipmap(GL_TEXTURE_2D);
+    
 
     // Render the bloom image
+    glBindTexture(GL_TEXTURE_2D, bloomTexture);
+    glGenerateMipmap(GL_TEXTURE_2D);
+    glEnable(GL_MULTISAMPLE);
     glBindVertexArray(rectVAO);
     glDisable(GL_DEPTH_TEST);
 
