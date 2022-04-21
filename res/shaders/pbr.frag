@@ -197,7 +197,7 @@ void main() {
 //		brightColor.rgb =  emissiveColor.rgb;
 	}
 
-	fragColor = emissiveColor;
+	fragColor = diffuseColor;
 
 	if (selfShadow == 1) {
 	vec3 lightDir = normalize(vec3(-4, -1, 2));
