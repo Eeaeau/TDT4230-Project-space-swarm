@@ -100,6 +100,7 @@ glm::mat4 orthoProject;
 glm::vec3 cursorPosition;
 glm::vec3 cursorProjectedPosition;
 
+glm::vec3 cameraFaceDirection;
 glm::mat4 VP;
 
 GLuint rectVAO, rectVBO;
@@ -266,7 +267,7 @@ void keyCallback(GLFWwindow* window,
 
 float scrollFactor = 5;
 float maxCameraHeight = 80;
-float minCameraHeight = -10;
+float minCameraHeight = -1000;
 
 void scrollCallback(GLFWwindow* window, double x, double y) {
     //scrollFactor = y;
@@ -413,13 +414,13 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     float rectangleVertices[] =
     {
         //  Coords   // texCoords
-         1.0f, -1.0f,  1.0f, 0.0f,
-        -1.0f, -1.0f,  0.0f, 0.0f,
         -1.0f,  1.0f,  0.0f, 1.0f,
-
-         1.0f,  1.0f,  1.0f, 1.0f,
+        -1.0f, -1.0f,  0.0f, 0.0f,
          1.0f, -1.0f,  1.0f, 0.0f,
-        -1.0f,  1.0f,  0.0f, 1.0f
+
+        -1.0f,  1.0f,  0.0f, 1.0f,
+         1.0f, -1.0f,  1.0f, 0.0f,
+         1.0f,  1.0f,  1.0f, 1.0f,
     };
 
     auto gamma = 1.0f;
@@ -452,7 +453,6 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     glGenTextures(1, &postProcessingTexture);
     glBindTexture(GL_TEXTURE_2D, postProcessingTexture);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, windowWidth, windowHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-    //glGenerateMipmap(GL_TEXTURE_2D);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
@@ -474,7 +474,12 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, bloomTexture, 0);
 
-
+    // create and attach depth buffer (renderbuffer)
+    unsigned int rboDepth;
+    glGenRenderbuffers(1, &rboDepth);
+    glBindRenderbuffer(GL_RENDERBUFFER, rboDepth);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, windowWidth, windowHeight);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rboDepth);
 
     // Tell OpenGL we need to draw to both attachments
     //attachments = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
@@ -605,6 +610,7 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     shipNode->model = GLModel(shipPath.c_str(), amount, shipNode->instanceMatrices);
     shipNode->nodeType = GLTF_GEOMETRY;
     shipNode->scale= glm::vec3(1);
+    shipNode->fresnel= true;
     rootNode->children.push_back(shipNode);
     
     rockNode->instanceMatrices = instanceMatrices3;
@@ -622,9 +628,8 @@ void initGame(GLFWwindow* window, CommandLineOptions gameOptions) {
     sceneNode->scale = glm::vec3(1);
     sceneNode->nodeType = GLTF_GEOMETRY;
     sceneNode->selfShadow = false;
-    //rootNode->children.push_back(sceneNode);
     
-    laserNode->instanceMatrices = std::vector<glm::mat4>(instanceMatrices2);
+    laserNode->instanceMatrices = std::vector<glm::mat4>(instanceMatrices);
     laserNode->model = GLModel(laserPlanePath.c_str(), amount, laserNode->instanceMatrices);
     laserNode->scale = glm::vec3(1);
     laserNode->position= glm::vec3(0, -2, 0);
@@ -738,6 +743,13 @@ void updateFrame(GLFWwindow* window) {
             //spread = 0;
             std::vector<glm::vec3> nextSpread;
 
+            glm::vec3 scaleMod;
+            glm::quat rotationMod;
+            glm::vec3 translationMod;
+            glm::vec3 skewMod;
+            glm::vec4 perspectiveMod;
+            glm::decompose(shipNode->modelMatrix, scaleMod, rotationMod, translationMod, skewMod, perspectiveMod);
+
             for (int i = 0; i < shipNode->instanceMatrices.size(); i++) {
 
                 glm::vec3 scale;
@@ -765,7 +777,7 @@ void updateFrame(GLFWwindow* window) {
                             closestDist = localLength;
                             closestPos = localDist;
                         }
-                        scaleFactor += 1.0f / glm::cosh(localLength);
+                        scaleFactor += 1.0f / glm::cosh(localLength/2);
                         //auto scaledDist = glm::abs(1.0f / glm::cosh(localDist)) * 1.0f / glm::cosh(localDist);
                         spreadContribution += scaleFactor * glm::normalize(glm::vec3(localDist.x, 0, localDist.z));
                         
@@ -786,8 +798,10 @@ void updateFrame(GLFWwindow* window) {
                 //shipNode->instanceMatrices[i] *= glm::rotate(static_cast<float>(timeDelta), glm::vec3(0, 1, 0));
                 //shipNode->instanceMatrices[i] = glm::translate(shipNode->instanceMatrices[i], translation) * shipNode->instanceMatrices[i] * glm::translate(shipNode->instanceMatrices[i], -translation);
                 //x *= alignTowards(translation, glm::vec3(0,0,1), glm::vec3(0, 1, 0));
-                //magmaSphereNode->instanceMatrices[i] = glm::translate(x, translation);
-                closestPos.y = 0;
+                ////magmaSphereNode->instanceMatrices[i] = glm::translate(x, translation);
+                //closestPos.y = 0;
+                //auto temp = glm::inverse(shipNode->modelMatrix) * alignTowards(translation + translationMod, cursorProjectedPosition, glm::vec3(0, 1, 0)) * shipNode->modelMatrix;
+                //shipNode->instanceMatrices[i] = glm::translate(temp, translation);
                 shipNode->instanceMatrices[i] = glm::translate(shipNode->instanceMatrices[i], 0.3f 
                     //* - glm::normalize(closestPos)
                     * (spreadContribution)
@@ -813,7 +827,7 @@ void updateFrame(GLFWwindow* window) {
     float speedModifier = 3.0;
 
 
-    auto cameraFaceDirection = glm::vec3(0.0, -2.0* cameraFaceDirectionFactor, -1.0);
+    cameraFaceDirection = glm::vec3(0.0, -2.0* cameraFaceDirectionFactor, -1.0);
     auto cameraPlaneDirection = glm::vec3(0.0, 0.0, -1.0);
     auto rightDirection = glm::vec3(1.0, 0.0, 0.0);
 
@@ -925,6 +939,8 @@ void renderNode(SceneNode* node) {
             glUniformMatrix4fv(pbrShader->getUniformFromName("viewProjectionMatrix"), 1, GL_FALSE, glm::value_ptr(node->viewProjectionMatrix));
             glUniformMatrix4fv(pbrShader->getUniformFromName("modelMatrix"), 1, GL_FALSE, glm::value_ptr(node->modelMatrix));
             glUniform1i(pbrShader->getUniformFromName("selfShadow"), node->selfShadow);
+            glUniform1i(pbrShader->getUniformFromName("useFresnel"), node->fresnel);
+            glUniform3fv(pbrShader->getUniformFromName("cameraFaceDirection"), 1, glm::value_ptr(cameraFaceDirection));
 
             if (node->model.instancing > 1) {
                 node->model.updateInstanceMatrix(node->instanceMatrices);
@@ -1022,19 +1038,22 @@ void renderFrame(GLFWwindow* window) {
     // Enable depth testing since it's disabled when drawing the framebuffer rectangle
     glEnable(GL_DEPTH_TEST);
 
+    
     //glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glCullFace(GL_BACK);
     // -------------------- Draw geo -------------------- //
     // 
     // Enable transparency
     /*glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);*/
 
-    glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LESS);*/
+    glCullFace(GL_BACK);
 
     overlayShader->activate();
     glUniform3fv(overlayShader->getUniformFromName("viewPos"), 1, glm::value_ptr(cameraPosition));
+
+    pbrShader->activate();
+    glUniform3fv(pbrShader->getUniformFromName("viewPos"), 1, glm::value_ptr(cameraPosition));
+    glUniform1f(pbrShader->getUniformFromName("gameTime"), static_cast<float>(gameElapsedTime));
 
     phongShader->activate();
     glUniform3fv(phongShader->getUniformFromName("viewPos"), 1, glm::value_ptr(cameraPosition));
@@ -1051,37 +1070,41 @@ void renderFrame(GLFWwindow* window) {
 
     // -------------------- Post process -------------------- //
     //glDisable(GL_BLEND);
-    glCullFace(GL_FRONT);
-    
+    //glCullFace(GL_FRONT);
 
     blurShader->activate();
     glBindFramebuffer(GL_FRAMEBUFFER, bloomFBO);
+    
 
-    // In the first bounc we want to get the data from the bloomTexture
-
+    // Render the bloom image
     glBindTexture(GL_TEXTURE_2D, bloomTexture);
     glGenerateMipmap(GL_TEXTURE_2D);
-
-    // Render the image
+    glEnable(GL_MULTISAMPLE);
     glBindVertexArray(rectVAO);
     glDisable(GL_DEPTH_TEST);
+
     glDrawArrays(GL_TRIANGLES, 0, 6);
     glBindVertexArray(0);
+
 
     // Bind the default framebuffer
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    // Draw the framebuffer rectangle
+
+    //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    // Draw the final stacked image on framebuffer rectangle
     framebufferShader->activate();
     glBindVertexArray(rectVAO);
     glDisable(GL_DEPTH_TEST); // prevents framebuffer rectangle from being discarded
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, postProcessingTexture);
-    //glGenerateMipmap(GL_TEXTURE_2D);
+
+
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, bloomBuffer);
-    //glGenerateMipmap(GL_TEXTURE_2D);
+
     glDrawArrays(GL_TRIANGLES, 0, 6);
     glBindVertexArray(0);
+
     
 }

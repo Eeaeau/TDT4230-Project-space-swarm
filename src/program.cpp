@@ -24,7 +24,7 @@ void runProgram(GLFWwindow* window, CommandLineOptions options)
     // Configure miscellaneous OpenGL settings
     //glDisable(GL_CULL_FACE);
     glEnable(GL_CULL_FACE);
-    glCullFace(GL_FRONT);
+    //glCullFace(GL_FRONT);
     glFrontFace(GL_CCW);
     
     // Enables Multisampling
@@ -32,6 +32,11 @@ void runProgram(GLFWwindow* window, CommandLineOptions options)
 
     // Enable built-in dithering
     glEnable(GL_DITHER);
+
+    // Enables the Depth Buffer
+    glEnable(GL_DEPTH_TEST);
+
+    glDepthFunc(GL_LESS);
 
     //// Enable transparency
     //glEnable(GL_BLEND);
@@ -48,7 +53,7 @@ void runProgram(GLFWwindow* window, CommandLineOptions options)
     while (!glfwWindowShouldClose(window))
     {
 	    // Clear colour and depth buffers
-	     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 
         updateFrame(window);

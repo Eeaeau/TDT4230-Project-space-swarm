@@ -21,6 +21,7 @@ out vec3 tangent;
 out vec3 position;
 out vec2 texcoord;
 out mat3 TBN;
+out vec3 fragPos;
 
 void main(){
 
@@ -30,11 +31,18 @@ void main(){
 
 	gl_Position = MVP * vec4(in_vertex, 1);
 
+	fragPos = vec3(modelMatrix * vec4(position, 1.0f));
+
 	if (useInstancing == 1){
 //		gl_Position = viewProjectionMatrix * model[gl_InstanceID] * modelMatrix * vec4(in_vertex, 1);
+		mat4 modelMatrix = modelMatrix * model[gl_InstanceID];
+
 		gl_Position = MVP * model[gl_InstanceID] * vec4(in_vertex, 1);
 //		normalMatrix = mat3(transpose(inverse(model[gl_InstanceID] * modelMatrix)));
-		normalMatrix = mat3(transpose(inverse(modelMatrix * model[gl_InstanceID])));
+
+		normalMatrix = mat3(transpose(inverse(modelMatrix)));
+
+		fragPos = vec3(modelMatrix * vec4(position, 1.0f));
 	}
 
 
@@ -54,4 +62,6 @@ void main(){
 //	tangent = normalize(in_tangent);
 	position = in_vertex;
 	texcoord = in_texcoord;
+
+	
 }

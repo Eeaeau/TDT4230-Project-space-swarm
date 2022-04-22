@@ -11,7 +11,7 @@ void main()
 {
     vec3 fragment = texture(screenTexture, texCoords).rgb;
 
-    int maxLOD = 8;
+    int maxLOD = 9;
     FragColor=  vec4(vec3(0), 1);
       for (int lod = 1; lod< maxLOD; lod++) {
         float x = cosh(0.4*lod);

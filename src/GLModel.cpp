@@ -298,7 +298,7 @@ void GLModel::drawMesh(tinygltf::Model& model, tinygltf::Mesh& mesh, Gloom::Shad
             
         glUniform1i(shader->getUniformFromName("useDiffuseTexture"), useDiffuseTexture);
         glUniform1i(shader->getUniformFromName("useNormalTexture"), useNormalTexture);
-        glUniform1i(shader->getUniformFromName("useRoughnessMap"), useRoughnessMap);
+        glUniform1i(shader->getUniformFromName("useRoughnessTexture"), useRoughnessMap);
         glUniform1i(shader->getUniformFromName("useEmissiveTexture"), useEmissiveTexture);
 
             
