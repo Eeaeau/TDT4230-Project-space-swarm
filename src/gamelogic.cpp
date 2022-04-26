@@ -801,7 +801,13 @@ void updateFrame(GLFWwindow* window) {
                 ////magmaSphereNode->instanceMatrices[i] = glm::translate(x, translation);
                 //closestPos.y = 0;
                 //auto temp = glm::inverse(shipNode->modelMatrix) * alignTowards(translation + translationMod, cursorProjectedPosition, glm::vec3(0, 1, 0));
-                auto temp = glm::translate(glm::mat4(1), glm::vec3(i, 0, 0));
+                auto temp = glm::translate(glm::mat4(1), translation+ 0.3f
+                    //* - glm::normalize(closestPos)
+                    * (spreadContribution)
+                    +1.0f
+                    * static_cast<float>(timeDelta)
+                    * dir
+                    * (0.5f + glm::min(glm::length(dist), 5.0f)));
                 temp *= alignTowards(translation + translationMod, cursorProjectedPosition, glm::vec3(0, 1, 0));
                 //auto temp = glm::rotate(shipNode->instanceMatrices[i], static_cast<float>(timeDelta), glm::vec3(0, 1, 0));
                 shipNode->instanceMatrices[i] = temp;
