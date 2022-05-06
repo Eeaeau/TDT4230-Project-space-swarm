@@ -174,7 +174,7 @@ glm::mat4 rotationAlign(const glm::vec3& d, const glm::vec3& z)
     return glm::mat4(trans);
 }
 
-glm::mat4 alignTowards(const glm::vec3& source, const glm::vec3& target, const glm::vec3& up = glm::vec3(0,1,0))
+glm::mat4 alignTowards(const glm::vec3& source, const glm::vec3& target, const glm::vec3& up = glm::vec3(0, 1, 0))
 {
     if (target == source) {
         return glm::mat4(1);
@@ -800,15 +800,25 @@ void updateFrame(GLFWwindow* window) {
                 //x *= alignTowards(translation, glm::vec3(0,0,1), glm::vec3(0, 1, 0));
                 ////magmaSphereNode->instanceMatrices[i] = glm::translate(x, translation);
                 //closestPos.y = 0;
-                //auto temp = glm::inverse(shipNode->modelMatrix) * alignTowards(translation + translationMod, cursorProjectedPosition, glm::vec3(0, 1, 0)) * shipNode->modelMatrix;
-                //shipNode->instanceMatrices[i] = glm::translate(temp, translation);
-                shipNode->instanceMatrices[i] = glm::translate(shipNode->instanceMatrices[i], 0.3f 
+                //auto temp = glm::inverse(shipNode->modelMatrix) * alignTowards(translation + translationMod, cursorProjectedPosition, glm::vec3(0, 1, 0));
+                auto temp = glm::translate(glm::mat4(1), translation+ 0.3f
                     //* - glm::normalize(closestPos)
                     * (spreadContribution)
-                    + 1.0f 
-                    * static_cast<float>(timeDelta) 
-                    * dir 
+                    +1.0f
+                    * static_cast<float>(timeDelta)
+                    * dir
                     * (0.5f + glm::min(glm::length(dist), 5.0f)));
+                temp *= alignTowards(translation + translationMod, cursorProjectedPosition, glm::vec3(0, 1, 0));
+                //auto temp = glm::rotate(shipNode->instanceMatrices[i], static_cast<float>(timeDelta), glm::vec3(0, 1, 0));
+                shipNode->instanceMatrices[i] = temp;
+                //shipNode->instanceMatrices[i] = glm::translate(temp, -glm::vec3(i,0,0));
+                //shipNode->instanceMatrices[i] = glm::translate(shipNode->instanceMatrices[i], 0.3f 
+                //    //* - glm::normalize(closestPos)
+                //    * (spreadContribution)
+                //    + 1.0f 
+                //    * static_cast<float>(timeDelta) 
+                //    * dir 
+                //    * (0.5f + glm::min(glm::length(dist), 5.0f)));
             }
 
             //nextSpread /= magmaSphereNode->instanceMatrices.size();
@@ -833,6 +843,10 @@ void updateFrame(GLFWwindow* window) {
 
     if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
         speed *= speedModifier;
+    }
+    
+    if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) {
+        speed /= 3 * speedModifier;
     }
 
     if (glfwGetKey( window, GLFW_KEY_W ) == GLFW_PRESS) {
