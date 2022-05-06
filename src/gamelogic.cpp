@@ -846,7 +846,7 @@ void updateFrame(GLFWwindow* window) {
     }
     
     if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) {
-        speed /= speedModifier;
+        speed /= 3 * speedModifier;
     }
 
     if (glfwGetKey( window, GLFW_KEY_W ) == GLFW_PRESS) {
